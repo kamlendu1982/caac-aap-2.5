@@ -1,0 +1,12 @@
+---
+all:
+  children:
+    automationcontroller:
+      hosts:
+        control:
+          ansible_host: "{{ aap_hostname | regex_replace('^https://', '')  }}"
+    execution:
+      hosts:
+        localhost:
+          ansible_connection: local
+...

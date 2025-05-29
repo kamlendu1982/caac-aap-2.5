@@ -1,0 +1,21 @@
+---
+- name: Playbook to configure ansible controller post installation
+  hosts: all
+  vars_files:
+    - ../vault.yml
+  connection: local
+  tasks:
+    - name: Authenticate and get an API token from Automation Hub
+      ansible.hub.ah_token:
+        ah_host: "{{ aap_hostname }}"
+        ah_username: "{{ aap_username }}"
+        ah_password: "{{ aap_password }}"
+        ah_path_prefix: 'galaxy'  # this is for private automation hub
+        ah_verify_ssl: false
+    - name: Fixing format
+      ansible.builtin.set_fact:
+        ah_token: "{{ ah_token['token'] }}"
+    - name: call dispatch role
+      ansible.builtin.include_role:
+        name: infra.aap_configuration.dispatch
+...

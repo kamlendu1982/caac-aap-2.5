@@ -1,0 +1,26 @@
+---
+hub_collection_remotes:
+  - name: community-infra
+    url: 'https://galaxy.ansible.com/'
+    requirements:
+      - name: infra.ee_utilities
+        version: '>=4.0.0'
+      - name: infra.aap_utilities
+        version: '>=2.5.2'
+      - name: containers.podman
+        version: '>=1.13.0'
+      - name: community.general
+        version: '>=10.4.0'
+      - name: infra.aap_configuration
+        version: '>=3.1.0'
+hub_collection_repositories:
+  - name: community-infra-repo
+    description: description of community-infra repository
+    pulp_labels:
+      pipeline: approved
+    distribution:
+      state: present
+    remote: community-infra
+hub_configuration_collection_repository_sync_async_delay: 5
+hub_configuration_collection_repository_sync_async_retries: 150
+...

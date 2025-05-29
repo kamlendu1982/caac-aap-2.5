@@ -1,0 +1,7 @@
+---
+aap_user_accounts:
+  - username: "{{ aap_service_account_username }}"
+    password: "{{ aap_service_account_password }}"
+    is_superuser: true
+    state: "present"
+...
