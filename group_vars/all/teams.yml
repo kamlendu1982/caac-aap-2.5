@@ -1,0 +1,6 @@
+---
+aap_teams:
+  - name: config as code team
+    description: config as code team
+    organization: config_as_code
+...

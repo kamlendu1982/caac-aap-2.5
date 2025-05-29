@@ -1,0 +1,22 @@
+---
+# BEGIN ANSIBLE MANAGED Variable configuration
+#aap_hostname: "controller.vpzmn.sandbox3596.opentlc.com"
+aap_hostname: "aap25.kam.example.com"
+# END ANSIBLE MANAGED Variable configuration
+aap_username: "{{ student_account }}"
+aap_password: "{{ aap_password }}"
+aap_validate_certs: false
+aap_request_timeout: 60
+
+ee_pull_collections_from_hub: false
+aap_service_account_username: aap_service_account
+
+ee_registry_username: "{{ aap_username }} "
+ee_registry_password: "{{ aap_password }}"
+ee_registry_dest: "{{ aap_hostname }}/config"
+
+ee_base_registry: "{{ aap_hostname }}"
+ee_base_registry_username: "{{ aap_username }}"
+ee_base_registry_password: "{{ aap_password }}"
+ee_validate_certs: false
+vault_pass: cascLB2193
