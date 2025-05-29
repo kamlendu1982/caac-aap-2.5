@@ -1,7 +1,7 @@
 ---
 # BEGIN ANSIBLE MANAGED Variable configuration
 #aap_hostname: "controller.vpzmn.sandbox3596.opentlc.com"
-aap_hostname: "aap25.kam.example.com"
+aap_hostname: "api25.kam.example.com"
 # END ANSIBLE MANAGED Variable configuration
 aap_username: "{{ student_account }}"
 aap_password: "{{ aap_password }}"
