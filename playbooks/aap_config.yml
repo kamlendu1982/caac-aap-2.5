@@ -1,8 +1,8 @@
 ---
 - name: Playbook to configure ansible controller post installation
   hosts: all
-  vars_files:
-    - ../vault.yml
+  #vars_files:
+  #  - ../vault.yml
   connection: local
   tasks:
     - name: Authenticate and get an API token from Automation Hub
