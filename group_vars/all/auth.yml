@@ -1,6 +1,7 @@
 ---
 # BEGIN ANSIBLE MANAGED Variable configuration
 aap_hostname: "ec2-3-15-172-166.us-east-2.compute.amazonaws.com"
+ah_hostname: "ip-172-31-43-75.us-east-2.compute.internal"
 #aap_hostname: "api25.kam.example.com"
 #aap_hostname: "ip-172-31-43-75.us-east-2.compute.internal"
 aap_password: admin123
@@ -18,9 +19,9 @@ aap_service_account_username: aap_service_account
 
 ee_registry_username: "{{ aap_username }} "
 ee_registry_password: "{{ aap_password }}"
-ee_registry_dest: "{{ aap_hostname }}/config"
+ee_registry_dest: "{{ ah_hostname }}/config"
 
-ee_base_registry: "{{ aap_hostname }}"
+ee_base_registry: "{{ ah_hostname }}"
 ee_base_registry_username: "{{ aap_username }}"
 ee_base_registry_password: "{{ aap_password }}"
 ee_validate_certs: false
