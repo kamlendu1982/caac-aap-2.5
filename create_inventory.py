@@ -22,10 +22,10 @@ import requests
 
 # Config
 org_id = 1  # Replace with actual Organization ID
-credential_id = 2  # Replace with actual SCM credential ID
+credential_id = 4  # Replace with actual SCM credential ID
 project_name = "demo-project"
 inventory_name = "demo-inventory"
-git_url = "https://github.com/your/repo.git"
+git_url = "git@github.com:kamlendu1982/caac-aap-2.5.git"
 inventory_relative_path = "inventory.yml"  # Path inside repo
 
 # Step 1: Create Project
