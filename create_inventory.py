@@ -118,10 +118,11 @@ if __name__ == "__main__":
     project_id = create_project(github_cred_id)
     inventory_id = create_inventory(project_id)
     inventory_source = create_inventory_source(project_id, inventory_id, "inventory.yml")
+    print(f"GitHub Credential ID: {github_cred_id}")
+    print(f"Project ID: {project_id}")
+    print(f"Inventory ID: {inventory_id}")
     job_template_id = create_job_template(project_id, inventory_id)
+    #job_template_id = create_job_template(34, 10)
     url = f"{gateway_url}/api/controller/v2/job_templates/{job_template_id}/launch/"
     response = requests.post(url, headers=headers, verify=False)
-    #print(f"GitHub Credential ID: {github_cred_id}")
-    #print(f"Project ID: {project_id}")
-    #print(f"Inventory ID: {inventory_id}")
 
