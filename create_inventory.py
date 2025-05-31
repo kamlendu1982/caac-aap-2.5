@@ -102,14 +102,14 @@ def create_job_template(project_id, inventory_id):
         "job_type": "run",
         "inventory": inventory_id,
         "project": project_id,
-        "playbook": "playbooks/aap_config.yml",  # Replace with your actual playbook
+        "playbook": "playbooks/aap_config.yml",  
         #"execution_environment": get_execution_environment_id("ee-supported-rhel9_caac_infra"),
         "execution_environment": execution_env_id,
         "limit": "localhost",
         "verbosity": 1
     }
     response = requests.post(f"{gateway_url}/api/controller/v2/job_templates/", headers=headers, json=payload, verify=False)
-    response.raise_for_status()
+    #response.raise_for_status()
     return response.json()["id"]
 
 # Run the workflow
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     print(f"GitHub Credential ID: {github_cred_id}")
     print(f"Project ID: {project_id}")
     print(f"Inventory ID: {inventory_id}")
-    job_template_id = create_job_template(project_id, inventory_id)
+    job_template_id = create_job_template(int(project_id), int(inventory_id))
     #job_template_id = create_job_template(34, 10)
     url = f"{gateway_url}/api/controller/v2/job_templates/{job_template_id}/launch/"
     response = requests.post(url, headers=headers, verify=False)
