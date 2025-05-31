@@ -1,0 +1,82 @@
+import os
+import requests
+
+gateway_url = os.getenv("AAP_GATEWAY_URL")
+token = os.getenv("AAP_TOKEN")
+
+headers = {
+    "Authorization": f"Bearer {token}",
+    "Content-Type": "application/json",
+}
+
+# Your logic here, just like in previous response
+import requests
+
+# Inputs
+#gateway_url = "https://your-aap-gateway-url"
+#token = "your_aap_token"
+#headers = {
+#    "Authorization": f"Bearer {token}",
+#    "Content-Type": "application/json",
+#}
+
+# Config
+org_id = 1  # Replace with actual Organization ID
+credential_id = 2  # Replace with actual SCM credential ID
+project_name = "demo-project"
+inventory_name = "demo-inventory"
+git_url = "https://github.com/your/repo.git"
+inventory_relative_path = "inventory.yml"  # Path inside repo
+
+# Step 1: Create Project
+project_payload = {
+    "name": project_name,
+    "description": "Project with Git-sourced inventory",
+    "organization": org_id,
+    "scm_type": "git",
+    "scm_url": git_url,
+    "scm_branch": "main",
+    "scm_credential": credential_id,
+    "scm_update_on_launch": True,
+}
+
+project_resp = requests.post(
+    f"{gateway_url}/api/controller/v2/projects/", headers=headers, json=project_payload
+)
+project_resp.raise_for_status()
+project_id = project_resp.json()["id"]
+print(f"Created Project ID: {project_id}")
+
+# Step 2: Create Inventory
+inventory_payload = {
+    "name": inventory_name,
+    "description": "Inventory sourced from Git project",
+    "organization": org_id,
+}
+
+inventory_resp = requests.post(
+    f"{gateway_url}/api/v2/inventories/", headers=headers, json=inventory_payload
+)
+inventory_resp.raise_for_status()
+inventory_id = inventory_resp.json()["id"]
+print(f"Created Inventory ID: {inventory_id}")
+
+# Step 3: Create Inventory Source (linking project to inventory)
+inventory_source_payload = {
+    "name": "Git Inventory Source",
+    "source": "scm",
+    "inventory": inventory_id,
+    "source_project": project_id,
+    "source_path": inventory_relative_path,
+    "update_on_launch": True,
+}
+
+inv_src_resp = requests.post(
+    f"{gateway_url}/api/v2/inventory_sources/",
+    headers=headers,
+    json=inventory_source_payload,
+)
+inv_src_resp.raise_for_status()
+inv_src_id = inv_src_resp.json()["id"]
+print(f"Created Inventory Source ID: {inv_src_id}")
+
