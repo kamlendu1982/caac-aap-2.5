@@ -1,14 +1,17 @@
 import os
 import requests
+import urllib3
 
-gateway_url = os.getenv("AAP_GATEWAY_URL")
-token = os.getenv("AAP_TOKEN")
+#gateway_url = os.getenv("AAP_GATEWAY_URL")
+#token = os.getenv("AAP_TOKEN")
+gateway_url = "https://ec2-18-222-140-65.us-east-2.compute.amazonaws.com"
+token="BSHASw6Q0wK3BF0GRHtrVHTQkVTEb5"
 
 headers = {
     "Authorization": f"Bearer {token}",
     "Content-Type": "application/json",
 }
-
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # Your logic here, just like in previous response
 import requests
 
@@ -36,7 +39,7 @@ project_payload = {
     "scm_type": "git",
     "scm_url": git_url,
     "scm_branch": "main",
-    "scm_credential": credential_id,
+    "credential": credential_id,
     "scm_update_on_launch": True,
 }
 
