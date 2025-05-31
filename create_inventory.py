@@ -83,7 +83,7 @@ def create_inventory_source(project_id, inventory_id, inventory_relative_path):
       json=inventory_source_payload,
       verify=False
     )
-    inv_src_resp.raise_for_status()
+    response.raise_for_status()
     return response.json()["id"]
 
 def get_execution_environment_id(name):
