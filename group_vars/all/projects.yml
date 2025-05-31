@@ -5,7 +5,9 @@ controller_projects:
     description: config as code project
     organization: config_as_code
     scm_type: git
-    scm_url: https://github.com/kamlendu1982/ServiceNowAAP.git
+    scm_url: https://github.com/kamlendu1982/HomeLabEDA.git
+    #https://github.com/kamlendu1982/ServiceNowAAP.git
+    #scm_url: https://github.com/kamlendu1982/ServiceNowAAP.git
     scm_branch: "main"
     scm_clean: true
     scm_update_on_launch: false
