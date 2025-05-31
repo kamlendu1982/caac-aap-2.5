@@ -1,89 +1,127 @@
-import os
 import requests
+import json
 import urllib3
 import os
 os.environ['CURL_CA_BUNDLE'] = ''
 os.environ['REQUESTS_CA_BUNDLE'] = ''
 
-#gateway_url = os.getenv("AAP_GATEWAY_URL")
-#token = os.getenv("AAP_TOKEN")
-gateway_url = "https://ec2-18-222-140-65.us-east-2.compute.amazonaws.com"
-token="BSHASw6Q0wK3BF0GRHtrVHTQkVTEb5"
-
-headers = {
-    "Authorization": f"Bearer {token}",
-    "Content-Type": "application/json",
-}
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-# Your logic here, just like in previous response
-import requests
 
-# Inputs
-#gateway_url = "https://your-aap-gateway-url"
-#token = "your_aap_token"
-#headers = {
-#    "Authorization": f"Bearer {token}",
-#    "Content-Type": "application/json",
-#}
-
-# Config
-org_id = 1  # Replace with actual Organization ID
-credential_id = 4  # Replace with actual SCM credential ID
-project_name = "demo-project"
-inventory_name = "demo-inventory"
-git_url = "git@github.com:kamlendu1982/caac-aap-2.5.git"
-inventory_relative_path = "inventory.yml"  # Path inside repo
-
-# Step 1: Create Project
-project_payload = {
-    "name": project_name,
-    "description": "Project with Git-sourced inventory",
-    "organization": org_id,
-    "scm_type": "git",
-    "scm_url": git_url,
-    "scm_branch": "main",
-    "credential": credential_id,
-    "scm_update_on_launch": True,
+gateway_url = os.getenv("AAP_GATEWAY_URL")
+token = os.getenv("AAP_TOKEN")
+github_user = os.getenv("SCM_USER")
+github_token = os.getenv("SCM_TOKEN")
+execution_env_id = os.getenv("EXE_ENV_ID")
+#github_user = "kamlendu1982"
+#github_token = "4q299JQv"
+#gateway_url = "https://ec2-18-222-140-65.us-east-2.compute.amazonaws.com"
+#token="BSHASw6Q0wK3BF0GRHtrVHTQkVTEb5"
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {token}"
 }
 
-project_resp = requests.post(
-    f"{gateway_url}/api/controller/v2/projects/", headers=headers, json=project_payload, verify=False
-)
-project_resp.raise_for_status()
-project_id = project_resp.json()["id"]
-print(f"Created Project ID: {project_id}")
+# GitHub credential creation
+def create_github_credential():
+    url = f"{gateway_url}/api/controller/v2/credentials/"
+    payload = {
+        "name": "GitHubControlKamPAT",
+        "description": "GitHub token for project sync",
+        "organization": 1,  # Adjust this ID to your org
+        "credential_type": 2,  # 2 = Source Control
+        "inputs": {
+            "username": github_user,
+            "password": github_token
+        }
+    }
+    response = requests.post(url, headers=headers, json=payload, verify=False)
+    response.raise_for_status()
+    return response.json()["id"]
 
-# Step 2: Create Inventory
-inventory_payload = {
-    "name": inventory_name,
-    "description": "Inventory sourced from Git project",
-    "organization": org_id,
-}
+# Project creation
+def create_project(credential_id):
+    url = f"{gateway_url}/api/controller/v2/projects/"
+    payload = {
+        "name": "Infra_caac",
+        "description": "Infra CAAC deployment project",
+        "organization": 1,  # Adjust org ID
+        "scm_type": "git",
+        "scm_url": "https://github.com/kamlendu1982/caac-aap-2.5.git",
+        "scm_branch": "main",
+        "credential": credential_id,
+        "scm_update_on_launch": True
+    }
+    response = requests.post(url, headers=headers, json=payload, verify=False)
+    response.raise_for_status()
+    return response.json()["id"]
 
-inventory_resp = requests.post(
-    f"{gateway_url}/api/controller/v2/inventories/", headers=headers, json=inventory_payload, verify=False
-)
-inventory_resp.raise_for_status()
-inventory_id = inventory_resp.json()["id"]
-print(f"Created Inventory ID: {inventory_id}")
+# Inventory creation
+def create_inventory(project_id):
+    url = f"{gateway_url}/api/controller/v2/inventories/"
+    payload = {
+        "name": "Inventory_Infra_caac",
+        "description": "Dynamic inventory",
+        "organization": 1  # Adjust org ID
+    }
+    response = requests.post(url, headers=headers, json=payload, verify=False)
+    response.raise_for_status()
+    return response.json()["id"]
 
-# Step 3: Create Inventory Source (linking project to inventory)
-inventory_source_payload = {
-    "name": "Git Inventory Source",
-    "source": "scm",
-    "inventory": inventory_id,
-    "source_project": project_id,
-    "source_path": inventory_relative_path,
-    "update_on_launch": True,
-}
+# Create Inventory Source (linking project to inventory)
+def create_inventory_source(project_id, inventory_id, inventory_relative_path):
+    inventory_source_payload = {
+      "name": "Inventory_Infra_caa Source",
+      "source": "scm",
+      "inventory": inventory_id,
+      "source_project": project_id,
+      "source_path": inventory_relative_path,
+      "update_on_launch": True,
+    }
+    response = requests.post(
+      f"{gateway_url}/api/controller/v2/inventory_sources/",
+      headers=headers,
+      json=inventory_source_payload,
+      verify=False
+    )
+    inv_src_resp.raise_for_status()
+    return response.json()["id"]
 
-inv_src_resp = requests.post(
-    f"{gateway_url}/api/controller/v2/inventory_sources/",
-    headers=headers,
-    json=inventory_source_payload,
-    verify=False
-)
-inv_src_resp.raise_for_status()
-inv_src_id = inv_src_resp.json()["id"]
-print(f"Created Inventory Source ID: {inv_src_id}")
+def get_execution_environment_id(name):
+    url = f"{gateway_url}/api/controller/v2/execution_environments/?name={name}"
+    response = requests.get(url, headers=headers, verify=False)
+    response.raise_for_status()
+    results = response.json().get("results", [])
+    if not results:
+        raise Exception(f"Execution Environment '{name}' not found.")
+    return results[0]["id"]
+
+def create_job_template(project_id, inventory_id):
+    payload = {
+        "name": "Create_CAAC_AAP",
+        "description": "Runs a job using repo and dynamic inventory",
+        "job_type": "run",
+        "inventory": inventory_id,
+        "project": project_id,
+        "playbook": "playbooks/aap_config.yml",  # Replace with your actual playbook
+        #"execution_environment": get_execution_environment_id("ee-supported-rhel9_caac_infra"),
+        "execution_environment": execution_env_id,
+        "limit": "localhost",
+        "verbosity": 1
+    }
+    response = requests.post(f"{gateway_url}/api/controller/v2/job_templates/", headers=headers, json=payload, verify=False)
+    response.raise_for_status()
+    return response.json()["id"]
+
+# Run the workflow
+if __name__ == "__main__":
+    github_cred_id = create_github_credential()
+    project_id = create_project(github_cred_id)
+    inventory_id = create_inventory(project_id)
+    inventory_source = create_inventory_source(project_id, inventory_id, "inventory.yml")
+    job_template_id = create_job_template(project_id, inventory_id)
+    url = f"{gateway_url}/api/controller/v2/job_templates/{job_template_id}/launch/"
+    response = requests.post(url, headers=headers, verify=False)
+    #print(f"GitHub Credential ID: {github_cred_id}")
+    #print(f"Project ID: {project_id}")
+    #print(f"Inventory ID: {inventory_id}")
 
