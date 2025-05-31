@@ -41,7 +41,7 @@ project_payload = {
 }
 
 project_resp = requests.post(
-    f"{gateway_url}/api/controller/v2/projects/", headers=headers, json=project_payload
+    f"{gateway_url}/api/controller/v2/projects/", headers=headers, json=project_payload, verify=False
 )
 project_resp.raise_for_status()
 project_id = project_resp.json()["id"]
@@ -55,7 +55,7 @@ inventory_payload = {
 }
 
 inventory_resp = requests.post(
-    f"{gateway_url}/api/v2/inventories/", headers=headers, json=inventory_payload
+    f"{gateway_url}/api/controller/v2/inventories/", headers=headers, json=inventory_payload, verify=False
 )
 inventory_resp.raise_for_status()
 inventory_id = inventory_resp.json()["id"]
@@ -72,9 +72,10 @@ inventory_source_payload = {
 }
 
 inv_src_resp = requests.post(
-    f"{gateway_url}/api/v2/inventory_sources/",
+    f"{gateway_url}/api/controller/v2/inventory_sources/",
     headers=headers,
     json=inventory_source_payload,
+    verify=False
 )
 inv_src_resp.raise_for_status()
 inv_src_id = inv_src_resp.json()["id"]
