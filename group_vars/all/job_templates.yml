@@ -3,7 +3,8 @@ controller_templates:
   - name: controller_config
     project: config_as_code
     job_type: run
-    playbook: playbooks/controller_config.yml
+    #playbook: playbooks/controller_config.yml
+    playbook: sample_playbooks/access_config_from_git.yml
     inventory: config_as_code
     execution_environment: supported
     concurrent_jobs_enabled: false
@@ -21,7 +22,8 @@ controller_templates:
   - name: ah_config
     project: config_as_code
     job_type: run
-    playbook: playbooks/hub_config.yml
+    #playbook: playbooks/hub_config.yml
+    playbook: sample_playbooks/get_remote_hostname.yml
     inventory: config_as_code
     execution_environment: supported
     concurrent_jobs_enabled: false
@@ -34,7 +36,8 @@ controller_templates:
   - name: eda_config
     project: config_as_code
     job_type: run
-    playbook: playbooks/eda_config.yml
+    playbook: sample_playbooks/access_config_from_git.yml
+    #playbook: playbooks/eda_config.yml
     inventory: config_as_code
     execution_environment: supported
     concurrent_jobs_enabled: false
@@ -47,7 +50,8 @@ controller_templates:
   - name: build_execution_environments
     project: config_as_code
     job_type: run
-    playbook: playbooks/build_ee.yml
+    #playbook: playbooks/build_ee.yml
+    playbook: sample_playbooks/get_remote_hostname.yml
     inventory: config_as_code
     execution_environment: supported
     concurrent_jobs_enabled: false
@@ -61,7 +65,8 @@ controller_templates:
   - name: build_custom_collections
     project: config_as_code
     job_type: run
-    playbook: playbooks/custom_collection.yml
+    #playbook: playbooks/custom_collection.yml
+    playbook: playbooks_eda/say-what.yml
     inventory: config_as_code
     execution_environment: supported
     concurrent_jobs_enabled: false
@@ -74,7 +79,8 @@ controller_templates:
   - name: console_token_refresh
     project: config_as_code
     job_type: run
-    playbook: playbooks/console_token_refresh.yml
+    playbook: sample_playbooks/access_config_from_git.yml
+    #playbook: playbooks/console_token_refresh.yml
     inventory: config_as_code
     execution_environment: minimal
     concurrent_jobs_enabled: false
@@ -86,7 +92,8 @@ controller_templates:
   - name: collection_sync
     project: config_as_code
     job_type: run
-    playbook: playbooks/sync_collections.yml
+    playbook: sample_playbooks/access_config_from_git.yml
+    #playbook: playbooks/sync_collections.yml
     inventory: config_as_code
     execution_environment: minimal
     concurrent_jobs_enabled: false
