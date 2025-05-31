@@ -14,6 +14,7 @@ token = os.getenv("AAP_TOKEN")
 github_user = os.getenv("SCM_USER")
 github_token = os.getenv("SCM_TOKEN")
 execution_env_id = os.getenv("EXE_ENV_ID")
+execution_env_id = 9
 github_user = "kamlendu1982"
 github_token = "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"
 #gateway_url = "https://ec2-18-222-140-65.us-east-2.compute.amazonaws.com"
@@ -112,7 +113,6 @@ def create_job_template(project_id, inventory_id):
     }
     print(payload)
     response = requests.post(f"{gateway_url}/api/controller/v2/job_templates/", headers=headers, json=payload, verify=False)
-    time.sleep(5)
     print(response.text)
     response.raise_for_status()
     return response.json()["id"]
@@ -121,6 +121,7 @@ def create_job_template(project_id, inventory_id):
 if __name__ == "__main__":
     github_cred_id = create_github_credential()
     project_id = create_project(github_cred_id)
+    time.sleep(15)
     inventory_id = create_inventory(project_id)
     inventory_source = create_inventory_source(project_id, inventory_id, "inventory.yml")
     print(f"GitHub Credential ID: {github_cred_id}")
