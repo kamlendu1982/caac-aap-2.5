@@ -1,6 +1,9 @@
 import os
 import requests
 import urllib3
+import os
+os.environ['CURL_CA_BUNDLE'] = ''
+os.environ['REQUESTS_CA_BUNDLE'] = ''
 
 #gateway_url = os.getenv("AAP_GATEWAY_URL")
 #token = os.getenv("AAP_TOKEN")
