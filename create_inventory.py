@@ -2,6 +2,8 @@ import requests
 import json
 import urllib3
 import os
+import time
+
 os.environ['CURL_CA_BUNDLE'] = ''
 os.environ['REQUESTS_CA_BUNDLE'] = ''
 
@@ -110,6 +112,7 @@ def create_job_template(project_id, inventory_id):
     }
     print(payload)
     response = requests.post(f"{gateway_url}/api/controller/v2/job_templates/", headers=headers, json=payload, verify=False)
+    time.sleep(5)
     print(response.text)
     response.raise_for_status()
     return response.json()["id"]
