@@ -6,10 +6,10 @@ aap_hostname: "ip-172-31-43-75.us-east-2.compute.internal"
 aap_password: admin123
 aap_service_account_password: MjMxODIy
 student_account: admin
-valt_pass: cascLB2193
 # END ANSIBLE MANAGED Variable configuration
-aap_username: "{{ student_account }}"
-aap_password: "{{ aap_password }}"
+#aap_username: "{{ student_account }}"
+aap_username: "admin"
+aap_password: "admin123"
 aap_validate_certs: false
 aap_request_timeout: 60
 
