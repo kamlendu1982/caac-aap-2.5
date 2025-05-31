@@ -108,8 +108,10 @@ def create_job_template(project_id, inventory_id):
         "limit": "localhost",
         "verbosity": 1
     }
+    print(payload)
     response = requests.post(f"{gateway_url}/api/controller/v2/job_templates/", headers=headers, json=payload, verify=False)
-    #response.raise_for_status()
+    print(response.text)
+    response.raise_for_status()
     return response.json()["id"]
 
 # Run the workflow
