@@ -5,7 +5,7 @@
 aap_hostname: "ip-172-31-43-75.us-east-2.compute.internal"
 aap_password: admin123
 aap_service_account_password: MjMxODIy
-student_account: admin
+student_account: "admin"
 # END ANSIBLE MANAGED Variable configuration
 #aap_username: "{{ student_account }}"
 aap_username: "admin"
