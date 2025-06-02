@@ -14,4 +14,15 @@ controller_projects:
     scm_credential: ""
     update_project: true
     wait: true
+  - name: windows_usecases
+    description: config as code project
+    organization: windows_usecase
+    scm_type: git
+    scm_url: https://github.com/kamlendu1982/WindowsAAP.git
+    scm_branch: "main"
+    scm_clean: true
+    scm_update_on_launch: true
+    scm_credential: ""
+    update_project: true
+    wait: true
 ...
