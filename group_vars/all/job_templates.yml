@@ -92,4 +92,17 @@ controller_templates:
     verbosity: 0
     credentials:
       - vault
+
+  - name: WindowsPowershell
+    project: windows_usecases
+    job_type: run
+    playbook: execute_powershell_remote_git.yml
+    #playbook: playbooks/sync_collections.yml
+    inventory: windows
+    execution_environment: "Default execution environment"
+    concurrent_jobs_enabled: false
+    #limit: "{{ env }}"
+    verbosity: 0
+    credentials:
+      - windows_password
 ...
