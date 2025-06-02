@@ -3,4 +3,7 @@ controller_inventories:
   - name: config_as_code
     description: inventory for configuring as code
     organization: config_as_code
+  - name: windows
+    description: inventory for windows automation
+    organization: windows_usecase 
 ...

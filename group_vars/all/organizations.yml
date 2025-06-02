@@ -7,4 +7,11 @@ aap_organizations:
       - hub_published
       - hub_community_infra_repo
 
+  - name: windows_usecase
+    default_environment: supported
+    galaxy_credentials: 
+      - hub_certified
+      - hub_published
+      - hub_community_infra_repo
+
 ...
