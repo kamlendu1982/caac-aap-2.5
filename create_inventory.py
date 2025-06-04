@@ -17,8 +17,8 @@ execution_env_id = os.getenv("EXE_ENV_ID")
 execution_env_id = 9
 github_user = "kamlendu1982"
 github_token = "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"
-#gateway_url = "https://ec2-18-222-140-65.us-east-2.compute.amazonaws.com"
-#token="BSHASw6Q0wK3BF0GRHtrVHTQkVTEb5"
+gateway_url = "https://ec2-18-218-88-116.us-east-2.compute.amazonaws.com"
+token="BSHASw6Q0wK3BF0GRHtrVHTQkVTEb5"
 headers = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {token}"
@@ -109,6 +109,7 @@ def create_job_template(project_id, inventory_id):
         #"execution_environment": get_execution_environment_id("ee-supported-rhel9_caac_infra"),
         "execution_environment": execution_env_id,
         "limit": "localhost",
+        "webhook_service": "GitHub",
         "verbosity": 1
     }
     print(payload)

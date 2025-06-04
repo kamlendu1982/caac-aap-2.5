@@ -13,14 +13,14 @@ hub_collection_remotes:
         version: '>=10.4.0'
       - name: infra.aap_configuration
         version: '>=3.1.0'
-hub_collection_repositories:
-  - name: community-infra-repo
-    description: description of community-infra repository
-    pulp_labels:
-      pipeline: approved
-    distribution:
-      state: present
-    remote: community-infra
+#hub_collection_repositories:
+#  - name: community-infra-repo
+#    description: description of community-infra repository
+#    pulp_labels:
+#      pipeline: approved
+#    distribution:
+#      state: present
+#    remote: community-infra
 hub_configuration_collection_repository_sync_async_delay: 5
 hub_configuration_collection_repository_sync_async_retries: 150
 ...
