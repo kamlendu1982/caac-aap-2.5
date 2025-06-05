@@ -15,10 +15,6 @@ github_user = os.getenv("SCM_USER")
 github_token = os.getenv("SCM_TOKEN")
 execution_env_id = os.getenv("EXE_ENV_ID")
 execution_env_id = 9
-github_user = "kamlendu1982"
-github_token = "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"
-gateway_url = "https://ec2-18-218-88-116.us-east-2.compute.amazonaws.com"
-token="BSHASw6Q0wK3BF0GRHtrVHTQkVTEb5"
 headers = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {token}"
