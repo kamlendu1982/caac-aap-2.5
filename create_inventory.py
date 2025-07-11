@@ -119,7 +119,7 @@ def create_job_template(project_id, inventory_id):
         #"execution_environment": get_execution_environment_id("ee-supported-rhel9_caac_infra"),
         "execution_environment": execution_env_id,
         "limit": "localhost",
-        "webhook_service": "GitHub",
+        #"webhook_service": "GitHub",
         "verbosity": 1
     }
     print(payload)
