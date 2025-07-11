@@ -3,6 +3,7 @@ import json
 import urllib3
 import os
 import time
+import sys
 
 os.environ['CURL_CA_BUNDLE'] = ''
 os.environ['REQUESTS_CA_BUNDLE'] = ''
@@ -14,19 +15,32 @@ token = os.getenv("AAP_TOKEN")
 github_user = os.getenv("SCM_USER")
 github_token = os.getenv("SCM_TOKEN")
 execution_env_id = os.getenv("EXE_ENV_ID")
-execution_env_id = 9
+#execution_env_id = 9
+#gateway_url = "https://api25.kam.example.com"
+#token = ""
 headers = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {token}"
 }
 
+# create self infra organization
+def create_self_infra_org():
+    url = f"{gateway_url}/api/gateway/v1/organizations/"
+    payload = {
+        "name": "self_infra_org",
+        "description": "organization for the initial infra"
+    }
+    response = requests.post(url, headers=headers, json=payload, verify=False)
+    response.raise_for_status()
+    return response.json()["id"]
+
 # GitHub credential creation
-def create_github_credential():
+def create_github_credential(org_id):
     url = f"{gateway_url}/api/controller/v2/credentials/"
     payload = {
         "name": "GitHubControlKamPAT",
         "description": "GitHub token for project sync",
-        "organization": 1,  # Adjust this ID to your org
+        "organization": org_id,  # Adjust this ID to your org
         "credential_type": 2,  # 2 = Source Control
         "inputs": {
             "username": github_user,
@@ -38,12 +52,12 @@ def create_github_credential():
     return response.json()["id"]
 
 # Project creation
-def create_project(credential_id):
+def create_project(credential_id, org_id):
     url = f"{gateway_url}/api/controller/v2/projects/"
     payload = {
         "name": "Infra_caac",
         "description": "Infra CAAC deployment project",
-        "organization": 1,  # Adjust org ID
+        "organization": org_id,  # Adjust org ID
         "scm_type": "git",
         "scm_url": "https://github.com/kamlendu1982/caac-aap-2.5.git",
         "scm_branch": "main",
@@ -55,12 +69,12 @@ def create_project(credential_id):
     return response.json()["id"]
 
 # Inventory creation
-def create_inventory(project_id):
+def create_inventory(project_id, org_id):
     url = f"{gateway_url}/api/controller/v2/inventories/"
     payload = {
         "name": "Inventory_Infra_caac",
         "description": "Dynamic inventory",
-        "organization": 1  # Adjust org ID
+        "organization": org_id  # Adjust org ID
     }
     response = requests.post(url, headers=headers, json=payload, verify=False)
     response.raise_for_status()
@@ -116,10 +130,12 @@ def create_job_template(project_id, inventory_id):
 
 # Run the workflow
 if __name__ == "__main__":
-    github_cred_id = create_github_credential()
-    project_id = create_project(github_cred_id)
+    org_id = create_self_infra_org()
+    print(org_id)
+    github_cred_id = create_github_credential(org_id)
+    project_id = create_project(github_cred_id, org_id)
     time.sleep(15)
-    inventory_id = create_inventory(project_id)
+    inventory_id = create_inventory(project_id,org_id)
     inventory_source = create_inventory_source(project_id, inventory_id, "inventory.yml")
     print(f"GitHub Credential ID: {github_cred_id}")
     print(f"Project ID: {project_id}")
