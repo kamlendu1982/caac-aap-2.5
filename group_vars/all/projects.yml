@@ -29,7 +29,7 @@ controller_projects:
     description: manage drift between AAP and Git
     organization: Default
     scm_type: git
-    scm_url: https://github.com/kamlendu1982/aap-drift-manager.git
+    scm_url: git@github.com:kamlendu1982/aap-drift-manager.git
     scm_branch: "main"
     scm_clean: true
     scm_update_on_launch: true
