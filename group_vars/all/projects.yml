@@ -34,6 +34,7 @@ controller_projects:
     scm_clean: true
     scm_update_on_launch: true
     scm_credential: "Kam-github"
+    default_environment: "aap-drift-manager-ee"
     update_project: true
     wait: true
 ...

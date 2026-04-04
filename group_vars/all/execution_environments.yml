@@ -10,4 +10,8 @@ controller_execution_environments:
     pull: always
     credential: cr_ah
 
+  - name: "aap-drift-manager-ee"
+    image: "quay.io/kashekha/aap-drift-manager-ee:latest"
+    pull: always
+    credential: cr_ah
 ...

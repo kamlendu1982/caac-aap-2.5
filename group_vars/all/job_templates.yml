@@ -98,7 +98,7 @@ controller_templates:
     job_type: run
     playbook: aap-drift-manager.yaml
     inventory: windows
-    execution_environment: "Default execution environment"
+    execution_environment: "aap-drift-manager-ee"
     concurrent_jobs_enabled: false
     #limit: "{{ env }}"
     webhook_service: "github"
