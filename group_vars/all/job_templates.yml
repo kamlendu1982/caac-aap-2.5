@@ -101,6 +101,8 @@ controller_templates:
     execution_environment: "Default execution environment"
     concurrent_jobs_enabled: false
     #limit: "{{ env }}"
+    webhook_service: "github"
+    webhook_credential: ""
     verbosity: 0
 
   - name: WindowsPowershell
