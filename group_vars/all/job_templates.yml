@@ -102,7 +102,7 @@ controller_templates:
     concurrent_jobs_enabled: false
     #limit: "{{ env }}"
     webhook_service: "github"
-    webhook_credential: ""
+    webhook_credential: "RQJeF5mwV3cZgpOeznkLH8jQdj98kuvNnYn12ROvvsHZQsOoG5"
     verbosity: 0
 
   - name: WindowsPowershell
