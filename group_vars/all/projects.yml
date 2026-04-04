@@ -33,7 +33,7 @@ controller_projects:
     scm_branch: "main"
     scm_clean: true
     scm_update_on_launch: true
-    scm_credential: ""
+    scm_credential: "Kam-github"
     update_project: true
     wait: true
 ...
