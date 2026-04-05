@@ -93,17 +93,41 @@ controller_templates:
     credentials:
       - vault
 
-  - name: drift-management
+  - name: aap_drift_manager
+    description: Detect and reconcile drift between Git CaaC and AAP
     project: drift_manager
-    job_type: run
     playbook: aap-drift-manager.yaml
-    inventory: windows
-    execution_environment: "aap-drift-manager-ee"
+    inventory: config_as_code
+    execution_environment: aap-drift-manager-ee
+    job_type: run
     concurrent_jobs_enabled: false
-    #limit: "{{ env }}"
+    ask_variables_on_launch: false
     webhook_service: "github"
     webhook_credential: "RQJeF5mwV3cZgpOeznkLH8jQdj98kuvNnYn12ROvvsHZQsOoG5"
     verbosity: 0
+    credentials:
+      - drift_manager_secrets
+    extra_vars:
+      # --- LLM / MaaS endpoint (non-sensitive) ---
+      maas_api_base: "https://llama-4-scout-17b-16e-w4a16-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com:443/v1"
+      maas_model: "llama-4-scout-17b-16e-w4a16"
+
+      # --- AAP Controller (non-sensitive) ---
+      aap_mcp_server_url: "https://ec2-3-143-54-35.us-east-2.compute.amazonaws.com"
+      aap_mcp_port: "443"
+      aap_verify_ssl: "false"
+
+      # --- Git CaaC repository ---
+      git_repo_path: "git@github.com:kamlendu1982/caac-aap-2.5.git"
+      git_branch: "main"
+
+      # --- Guardrails ---
+      no_delete_types: "credentials"
+      protected_objects: "Default"
+
+      # --- Run mode (false = dry-run, true = apply changes) ---
+      drift_apply: false
+      drift_objects: ""
 
   - name: WindowsPowershell
     project: windows_usecases
