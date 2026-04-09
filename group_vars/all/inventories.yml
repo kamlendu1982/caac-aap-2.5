@@ -7,6 +7,6 @@ controller_inventories:
     description: inventory for windows automation
     organization: windows_usecase 
   - name: sample_dynamic
-    description: inventory for windows automation
+    description: example for an inventory source
     organization: Default
 ...
