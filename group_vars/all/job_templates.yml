@@ -109,8 +109,9 @@ controller_templates:
       - drift_manager_secrets
     extra_vars:
       # --- LLM / MaaS endpoint (non-sensitive) ---
-      maas_api_base: "https://llama-4-scout-17b-16e-w4a16-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com:443/v1"
-      maas_model: "llama-4-scout-17b-16e-w4a16"
+      #maas_api_base: "https://llama-4-scout-17b-16e-w4a16-maas-apicast-production.apps.prod.rhoai.rh-aiservices-bu.com:443/v1"
+      maas_api_base: "https://litellm-prod.apps.maas.redhatworkshops.io/v1"
+      maas_model: "llama-scout-17b"
 
       # --- AAP Controller (non-sensitive) ---
       aap_mcp_server_url: "https://ec2-3-143-54-35.us-east-2.compute.amazonaws.com"
