@@ -6,4 +6,7 @@ controller_inventories:
   - name: windows
     description: inventory for windows automation
     organization: windows_usecase 
+  - name: sample_dynamic
+    description: inventory for windows automation
+    organization: Default
 ...

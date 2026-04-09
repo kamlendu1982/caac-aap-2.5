@@ -1,11 +1,11 @@
 ---
 controller_inventory_sources:
   - name: config_as_code_source
-    organization: config_as_code
-    source: scm
-    source_project: config_as_code
-    source_path: inventory
-    inventory: config_as_code
+    organization: Default
+    source: "Sourced from a Project"
+    source_project: Inventory_project
+    source_path: inventory/static_git_inv.yml
+    inventory: sample_dynamic
     credential: ""
     overwrite: true
     overwrite_vars: true

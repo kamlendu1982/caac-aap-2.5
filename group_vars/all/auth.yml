@@ -6,7 +6,7 @@ ah_hostname: "api25.tail8061e4.ts.net"
 #aap_hostname: "api25.kam.example.com"
 #aap_hostname: "ip-172-31-43-75.us-east-2.compute.internal"
 aap_password: admin123
-aap_service_account_password: MjMxODIy
+aap_service_account_password: xxxxx 
 student_account: "admin"
 # END ANSIBLE MANAGED Variable configuration
 #aap_username: "{{ student_account }}"
