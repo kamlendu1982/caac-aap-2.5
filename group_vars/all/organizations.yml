@@ -16,4 +16,11 @@ aap_organizations:
       - hub_certified
       - hub_published
       - hub_community_infra_repo
+
+  - name: MandT 
+    default_environment: supported
+    galaxy_credentials: 
+      - hub_certified
+      - hub_published
+      - hub_community_infra_repo
 ...

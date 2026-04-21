@@ -1,0 +1,5 @@
+---
+instance_groups:
+  - name: mycontainer-group
+    is_container_group: true
+    pod_spec_override: '{ "apiVersion": "v1", "kind": "Pod", "metadata": { "namespace": "aap-containergroup", "labels": { "ansible_job": "network", "ansible_team": "net-team" } }, "spec": { "serviceAccountName": "containergroup-service-account", "automountServiceAccountToken": false, "affinity": { "podAntiAffinity": { "preferredDuringSchedulingIgnoredDuringExecution": [ { "weight": 100, "podAffinityTerm": { "labelSelector": { "matchExpressions": [ { "key": "ansible_job", "operator": "Exists" } ] }, "topologyKey": "kubernetes.io/hostname" } } ] } }, "containers": [ { "image": "quay.io/kashekha/aap-drift-manager-ee:latest", "name": "worker", "args": [ "ansible-runner", "worker", "--private-data-dir=/runner" ], "resources": { "requests": { "cpu": "250m", "memory": "100Mi" } } } ], "additional_labels": [ "windowsteam" ] } }' 

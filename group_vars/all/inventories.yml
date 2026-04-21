@@ -9,4 +9,8 @@ controller_inventories:
   - name: sample_dynamic
     description: example for an inventory source
     organization: Default
+  - name: sample_container_roup
+    description: example for with a containergroup
+    organization: MandT
+    instance_group: 3
 ...
