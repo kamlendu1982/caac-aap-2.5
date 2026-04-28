@@ -5,10 +5,19 @@ controller_inventories:
     organization: config_as_code
   - name: windows
     description: inventory for windows automation
-    organization: windows_usecase 
+    organization: windows_usecase
+    variables:
+      ansible_connection: winrm
+      ansible_port: 5985
+      ansible_winrm_server_cert_validation: ignore
+      ansible_winrm_transport: basic
   - name: sample_dynamic
     description: example for an inventory source
     organization: Default
+  - name: sample_container_roup
+    description: example for with a containergroup
+    organization: MandT
+    instance_group: 3
   - name: sample_container_roup
     description: example for with a containergroup
     organization: MandT

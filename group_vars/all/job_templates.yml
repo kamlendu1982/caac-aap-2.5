@@ -129,6 +129,32 @@ controller_templates:
       drift_apply: false
       drift_objects: ""
 
+  - name: PS-long-running-waitfor-checkWinRM
+    project: windows_usecases
+    job_type: run
+    playbook: PS-long-running-wait-for-checkWinRM.yaml
+    #playbook: playbooks/sync_collections.yml
+    inventory: windows
+    execution_environment: "Control Plane Execution Environment"
+    concurrent_jobs_enabled: false
+    #limit: "{{ env }}"
+    verbosity: 0
+    credentials:
+      - windows_password
+
+  - name: PS-long-running-async-checkWinRM
+    project: windows_usecases
+    job_type: run
+    playbook: PS-long-running-async-checkWinRM.yaml
+    #playbook: playbooks/sync_collections.yml
+    inventory: windows
+    execution_environment: "Control Plane Execution Environment"
+    concurrent_jobs_enabled: false
+    #limit: "{{ env }}"
+    verbosity: 0
+    credentials:
+      - windows_password
+
   - name: WindowsPowershell
     project: windows_usecases
     job_type: run
