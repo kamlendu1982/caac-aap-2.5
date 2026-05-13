@@ -167,4 +167,16 @@ controller_templates:
     verbosity: 0
     credentials:
       - windows_password
+
+  - name: Deploy Splunk using Podman
+    description: Deploy Splunk using Podman
+    project: drift_manager
+    playbook: playbooks/deploy_splunk.yml
+    inventory: localhost
+    execution_environment: "Default execution environment"
+    job_type: run
+    verbosity: 0
+    extra_vars:
+      splunk_password: "ansible123"
+      splunk_image: "splunk/splunk:latest"
 ...
