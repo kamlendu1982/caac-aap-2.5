@@ -11,6 +11,9 @@ controller_inventories:
       ansible_port: 5985
       ansible_winrm_server_cert_validation: ignore
       ansible_winrm_transport: basic
+  - name: splunk_host
+    description: splunk host
+    organization: Default
   - name: sample_dynamic
     description: example for an inventory source
     organization: Default
