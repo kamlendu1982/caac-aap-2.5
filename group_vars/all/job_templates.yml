@@ -172,7 +172,7 @@ controller_templates:
     description: Deploy Splunk using Podman
     project: drift_manager
     playbook: playbooks/deploy_splunk.yml
-    inventory: localhost
+    inventory: config_as_code
     execution_environment: "Default execution environment"
     job_type: run
     verbosity: 0
