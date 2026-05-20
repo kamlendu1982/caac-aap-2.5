@@ -18,4 +18,101 @@
     - name: call dispatch role
       ansible.builtin.include_role:
         name: infra.aap_configuration.dispatch
+
+    - name: starting of EDA configuration
+      block:
+        - name: create eda AAP credentials
+          ansible.eda.credential:
+            name: "{{ eda_aap_cred_name }}"
+            controller_host: "https://{{ aap_hostname }}"
+            controller_username: "{{ aap_username }}"
+            controller_password: "{{ aap_password }}"
+            description: aap credentials
+            credential_type_name: 'Red Hat Ansible Automation Platform'
+            organization_name: Default
+            validate_certs: false
+            inputs:
+              username: "{{ aap_username }}"
+              password: "{{ aap_password }}"
+              host: "https://{{ aap_hostname }}/api/controller/"
+              verify_ssl: false
+
+
+        - name: create eda credentials
+          ansible.eda.credential:
+            name: "{{ eda_gitlab_cred_name }}"
+            controller_host: "https://{{ aap_hostname }}"
+            controller_username: "{{ aap_username }}"
+            controller_password: "{{ aap_password }}"
+            description: my GitHub Credential
+            credential_type_name: 'Source Control'
+            organization_name: Default
+            validate_certs: false
+            inputs:
+              username: kamlendu1982
+              password: "{{ gitlab_token }}"
+
+        - name: create eda credentials quay
+          ansible.eda.credential:
+            name: "{{ eda_aap_quay_cred }}"
+            controller_host: "https://{{ aap_hostname }}"
+            controller_username: "{{ aap_username }}"
+            controller_password: "{{ aap_password }}"
+            description: creds for quay
+            credential_type_name: 'Container Registry'
+            organization_name: Default
+            validate_certs: false
+            inputs:
+              username: kashekha@redhat.com
+              password: "{{ gitlab_token }}"
+              host: quay.io
+
+        - name: create eda project
+          ansible.eda.project:
+            name: "{{ eda_project_name }}"
+            controller_host: "https://{{ aap_hostname }}"
+            controller_username: "{{ aap_username }}"
+            controller_password: "{{ aap_password }}"
+            url: https://gitlab.consulting.redhat.com/rh126-demojam/the-healing-mesh.git
+            aap_hostname: "https://{{ aap_hostname }}/"
+            aap_username: "{{ aap_username }}"
+            aap_password: "{{ aap_password }}"
+            credential: "{{ eda_gitlab_cred_name }}"
+            organization_name: Default
+            validate_certs: false
+            sync: true
+          #tags:
+          #  - never 
+
+        - name: create a rulebook activation
+          ansible.eda.rulebook_activation:
+            name: Run action on mqtt
+            description: Hook to listen for changes in GitHub
+            project: "{{ eda_project_name }}"
+            #project: mqtt-https
+            organization_name: Default
+            rulebook_name: "sensor-data-rest-chek.yml"
+            decision_environment: "MQTT Decision Environment"
+            controller_host: "https://{{ aap_hostname }}"
+            controller_username: "admin"
+            controller_password: "{{ aap_password }}"
+            eda_credentials:
+              - "{{ eda_aap_cred_name }}"
+            enabled: false
+            state: present
+            validate_certs: false
+
+        - name: Use api lookup plugin to run assertions
+          ansible.builtin.assert:
+            that:
+              - project_lookup | map(attribute='name') is contains('my_project')
+              - project_lookup | map(attribute='name') is contains('my_project_clone')
+          tags:
+            - assertions
+            - never
+          vars:
+            project_lookup: "{{ lookup('infra.eda_configuration.eda_api', 'projects', host=eda_hostname, username=eda_username,
+                password=eda_password, verify_ssl=false, query_params=qp) }}"
+            qp:
+              url: 'https://github.com/ansible/event-driven-ansible.git'
 ...

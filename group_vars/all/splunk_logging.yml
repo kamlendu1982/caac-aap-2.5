@@ -1,0 +1,50 @@
+# Splunk HEC Logging - AAP 2.6 Containerized
+# Place in group_vars/all/splunk_logging.yml
+# Secrets go in group_vars/all/vault.yml (ansible-vault encrypted)
+#
+# Key lessons:
+# - LOG_AGGREGATOR_HOST must include full HEC path: /services/collector/event
+# - LOG_AGGREGATOR_PASSWORD is the Splunk HEC token
+# - API path for AAP 2.6 is /api/controller/v2/ (not /api/v2/)
+# - After applying, restart automation-controller-rsyslog container
+
+splunk_host: "ec2-3-141-192-254.us-east-2.compute.amazonaws.com"
+splunk_hec_token: "8a05b591-4937-47c5-807a-064f63a4b224"
+
+controller_settings:
+  - name: LOG_AGGREGATOR_HOST
+    value: "http://{{ splunk_host }}/services/collector/event"
+
+  - name: LOG_AGGREGATOR_PORT
+    value: 8088
+
+  - name: LOG_AGGREGATOR_TYPE
+    value: "splunk"
+
+  - name: LOG_AGGREGATOR_PASSWORD
+    value: "{{ vault_splunk_hec_token }}"
+
+  - name: LOG_AGGREGATOR_LOGGERS
+    value:
+      - awx
+      - activity_stream
+      - job_events
+      - job_lifecycle
+
+  - name: LOG_AGGREGATOR_LEVEL
+    value: "INFO"
+
+  - name: LOG_AGGREGATOR_ENABLED
+    value: true
+
+  - name: LOG_AGGREGATOR_VERIFY_CERT
+    value: false
+
+  - name: LOG_AGGREGATOR_INDIVIDUAL_FACTS
+    value: false
+
+  - name: LOG_AGGREGATOR_ACTION_MAX_DISK_USAGE_GB
+    value: 1
+
+  - name: LOG_AGGREGATOR_MAX_DISK_USAGE_PATH
+    value: "/var/lib/awx"

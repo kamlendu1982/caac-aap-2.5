@@ -4,4 +4,8 @@ aap_user_accounts:
     password: "{{ aap_service_account_password }}"
     is_superuser: true
     state: "present"
+  - username: "sudo-admin"
+    password: "ansible123"
+    is_superuser: true
+    state: "present"
 ...
