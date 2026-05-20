@@ -20,6 +20,10 @@
         name: infra.aap_configuration.dispatch
 
     - name: starting of EDA configuration
+      vars:
+        eda_aap_cred_name: "myaap"
+        eda_gitlab_cred_name: "kam-github"
+        eda_project_name: "Splunk-EDA-Project"
       block:
         - name: create eda AAP credentials
           ansible.eda.credential:
@@ -46,39 +50,21 @@
             controller_password: "{{ aap_password }}"
             description: my GitHub Credential
             credential_type_name: 'Source Control'
-            organization_name: Default
+            organization_name: "config_as_code"
             validate_certs: false
             inputs:
               username: kamlendu1982
-              password: "{{ gitlab_token }}"
-
-        - name: create eda credentials quay
-          ansible.eda.credential:
-            name: "{{ eda_aap_quay_cred }}"
-            controller_host: "https://{{ aap_hostname }}"
-            controller_username: "{{ aap_username }}"
-            controller_password: "{{ aap_password }}"
-            description: creds for quay
-            credential_type_name: 'Container Registry'
-            organization_name: Default
-            validate_certs: false
-            inputs:
-              username: kashekha@redhat.com
-              password: "{{ gitlab_token }}"
-              host: quay.io
-
+              ssh_key_data: "{{ gitlab_token }}"
+       
         - name: create eda project
           ansible.eda.project:
             name: "{{ eda_project_name }}"
             controller_host: "https://{{ aap_hostname }}"
             controller_username: "{{ aap_username }}"
             controller_password: "{{ aap_password }}"
-            url: https://gitlab.consulting.redhat.com/rh126-demojam/the-healing-mesh.git
-            aap_hostname: "https://{{ aap_hostname }}/"
-            aap_username: "{{ aap_username }}"
-            aap_password: "{{ aap_password }}"
+            url: git@github.com:kamlendu1982/HomeLabEDA.git
             credential: "{{ eda_gitlab_cred_name }}"
-            organization_name: Default
+            organization_name: "config_as_code"
             validate_certs: false
             sync: true
           #tags:
@@ -86,21 +72,17 @@
 
         - name: create a rulebook activation
           ansible.eda.rulebook_activation:
-            name: Run action on mqtt
+            name: splunk-action-caac
             description: Hook to listen for changes in GitHub
             project: "{{ eda_project_name }}"
             #project: mqtt-https
-            organization_name: Default
-            rulebook_name: "sensor-data-rest-chek.yml"
-            decision_environment: "MQTT Decision Environment"
-            controller_host: "https://{{ aap_hostname }}"
-            controller_username: "admin"
-            controller_password: "{{ aap_password }}"
+            organization_name: "config_as_code"
+            rulebook_name: "test_splunk_webhook.yml"
+            decision_environment: "Default Decision Environment"
             eda_credentials:
               - "{{ eda_aap_cred_name }}"
-            enabled: false
+            enabled: true
             state: present
-            validate_certs: false
 
         - name: Use api lookup plugin to run assertions
           ansible.builtin.assert:
