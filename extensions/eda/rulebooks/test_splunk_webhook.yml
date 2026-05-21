@@ -1,0 +1,23 @@
+---
+- name: Listen for events on a webhook
+  hosts: web
+  ## Define our source for events
+  sources:
+     - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5001
+
+  rules:
+    ## Define the conditions we are looking for 
+    - name: run if message has aws 
+      #condition: event.payload != null
+      condition: event.payload != null and event.payload.result.actor == "sudoadmin"
+      #condition: true
+    ## Define the action we should take should the condition be met  
+      action:
+        #print_event:
+        #  pretty: true
+        run_job_template:
+          name: RunOnSplunk
+          extra_vars: "{{ event.meta }}"
+          organization: config_as_code
