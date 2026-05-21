@@ -1,0 +1,181 @@
+---
+# =============================================================================
+# EDA Configuration Playbook
+# =============================================================================
+# Configures Event-Driven Ansible (EDA) objects on an AAP instance:
+#   1. EDA credential — AAP controller credential for rulebook callbacks
+#   2. EDA credential — Source Control credential to pull EDA projects
+#   3. EDA project    — Git repository containing rulebooks
+#   4. Rulebook activation — live listener wired to the EDA project
+#
+# HOW TO RUN
+# ----------
+# From the command line (supply target AAP vars via extra-vars or vault):
+#
+#   ansible-playbook playbooks/eda_config.yml \
+#     -e aap_hostname=your-aap.example.com \
+#     -e aap_username=admin \
+#     -e aap_password=yourpassword \
+#     -e scm_ssh_key="$(cat ~/.ssh/id_rsa)"
+#
+# From an AAP Job Template:
+#   - Project  : the CaaC project pointing at this repository
+#   - Playbook : playbooks/eda_config.yml
+#   - Inventory: any inventory (tasks use connection: local)
+#   - Credential: one that injects the variables below as extra-vars or env vars
+#
+# VARIABLES
+# ---------
+# Override any of these via extra-vars, a survey, or a custom credential:
+#
+#   aap_hostname          FQDN or IP of the AAP controller (no https://)
+#   aap_username          AAP admin username
+#   aap_password          AAP admin password
+#   aap_verify_ssl        Verify TLS certs (default: false)
+#
+#   eda_aap_cred_name     Name for the AAP controller EDA credential
+#   eda_scm_cred_name     Name for the Source Control EDA credential
+#   eda_scm_username      Git username for the Source Control credential
+#   scm_ssh_key           SSH private key for the Source Control credential
+#
+#   eda_project_name      Name for the EDA project
+#   eda_project_org       Organisation that owns the EDA project
+#   eda_project_url       Git URL for the EDA rulebook repository
+#   eda_project_cred      Source control credential name to use for the project
+#
+#   eda_activation_name   Name for the rulebook activation
+#   eda_activation_org    Organisation that owns the activation
+#   eda_rulebook          Rulebook filename inside the EDA project
+#   eda_decision_env      Decision Environment to run the activation in
+# =============================================================================
+
+- name: Configure Event-Driven Ansible (EDA) objects
+  hosts: all
+  connection: local
+  gather_facts: false
+
+  vars:
+    # ── AAP controller connection ──────────────────────────────────────────
+    aap_hostname: ""            # set via extra-vars or survey
+    aap_username: ""
+    aap_password: ""
+    aap_verify_ssl: false
+
+    # ── EDA AAP controller credential ─────────────────────────────────────
+    eda_aap_cred_name: "myaap"
+    eda_aap_cred_org: "Default"
+
+    # ── EDA Source Control credential ─────────────────────────────────────
+    eda_scm_cred_name: "kam-github"
+    eda_scm_cred_org: "config_as_code"
+    eda_scm_username: "kamlendu1982"
+    scm_ssh_key: ""             # set via extra-vars, survey, or vault
+
+    # ── EDA Project ────────────────────────────────────────────────────────
+    eda_project_name: "Splunk-EDA-Project"
+    eda_project_org: "config_as_code"
+    eda_project_url: "git@github.com:kamlendu1982/HomeLabEDA.git"
+    eda_project_cred: "{{ eda_scm_cred_name }}"
+
+    # ── Rulebook Activation ────────────────────────────────────────────────
+    eda_activation_name: "splunk-action-caac"
+    eda_activation_org: "config_as_code"
+    eda_activation_desc: "Hook to listen for changes in GitHub / Splunk alerts"
+    eda_rulebook: "test_splunk_webhook.yml"
+    eda_decision_env: "Default Decision Environment"
+
+  pre_tasks:
+    - name: Validate required variables are set
+      ansible.builtin.assert:
+        that:
+          - aap_hostname | length > 0
+          - aap_username | length > 0
+          - aap_password | length > 0
+        fail_msg: >-
+          Required variables missing. Supply aap_hostname, aap_username and
+          aap_password via extra-vars, a survey, or a custom credential.
+        success_msg: "Required variables present — proceeding with EDA configuration"
+
+  tasks:
+    # ── 1. EDA credential: AAP controller ─────────────────────────────────
+    - name: Create EDA credential for AAP controller ({{ eda_aap_cred_name }})
+      ansible.eda.credential:
+        name: "{{ eda_aap_cred_name }}"
+        description: "AAP controller credential used by rulebook activations"
+        credential_type_name: "Red Hat Ansible Automation Platform"
+        organization_name: "{{ eda_aap_cred_org }}"
+        controller_host: "https://{{ aap_hostname }}"
+        controller_username: "{{ aap_username }}"
+        controller_password: "{{ aap_password }}"
+        validate_certs: "{{ aap_verify_ssl }}"
+        inputs:
+          host: "https://{{ aap_hostname }}/api/controller/"
+          username: "{{ aap_username }}"
+          password: "{{ aap_password }}"
+          verify_ssl: "{{ aap_verify_ssl }}"
+        state: present
+
+    # ── 2. EDA credential: Source Control ─────────────────────────────────
+    - name: Create EDA Source Control credential ({{ eda_scm_cred_name }})
+      ansible.eda.credential:
+        name: "{{ eda_scm_cred_name }}"
+        description: "Source Control credential for pulling EDA rulebook projects"
+        credential_type_name: "Source Control"
+        organization_name: "{{ eda_scm_cred_org }}"
+        controller_host: "https://{{ aap_hostname }}"
+        controller_username: "{{ aap_username }}"
+        controller_password: "{{ aap_password }}"
+        validate_certs: "{{ aap_verify_ssl }}"
+        inputs:
+          username: "{{ eda_scm_username }}"
+          ssh_key_data: "{{ scm_ssh_key }}"
+        state: present
+      when: scm_ssh_key | length > 0
+
+    # ── 3. EDA Project ─────────────────────────────────────────────────────
+    - name: Create EDA project ({{ eda_project_name }})
+      ansible.eda.project:
+        name: "{{ eda_project_name }}"
+        description: "EDA rulebook project — Splunk webhook integration"
+        url: "{{ eda_project_url }}"
+        credential: "{{ eda_project_cred }}"
+        organization_name: "{{ eda_project_org }}"
+        controller_host: "https://{{ aap_hostname }}"
+        controller_username: "{{ aap_username }}"
+        controller_password: "{{ aap_password }}"
+        validate_certs: "{{ aap_verify_ssl }}"
+        sync: true
+        state: present
+
+    # ── 4. Rulebook Activation ─────────────────────────────────────────────
+    - name: Create rulebook activation ({{ eda_activation_name }})
+      ansible.eda.rulebook_activation:
+        name: "{{ eda_activation_name }}"
+        description: "{{ eda_activation_desc }}"
+        project: "{{ eda_project_name }}"
+        rulebook_name: "{{ eda_rulebook }}"
+        decision_environment: "{{ eda_decision_env }}"
+        organization_name: "{{ eda_activation_org }}"
+        eda_credentials:
+          - "{{ eda_aap_cred_name }}"
+        controller_host: "https://{{ aap_hostname }}"
+        controller_username: "{{ aap_username }}"
+        controller_password: "{{ aap_password }}"
+        validate_certs: "{{ aap_verify_ssl }}"
+        enabled: true
+        state: present
+
+  post_tasks:
+    - name: EDA configuration summary
+      ansible.builtin.debug:
+        msg:
+          - "============================================================"
+          - " EDA Configuration Complete"
+          - "============================================================"
+          - "  AAP host       : {{ aap_hostname }}"
+          - "  Credentials    : {{ eda_aap_cred_name }}, {{ eda_scm_cred_name }}"
+          - "  Project        : {{ eda_project_name }}"
+          - "  Activation     : {{ eda_activation_name }}"
+          - "  Rulebook       : {{ eda_rulebook }}"
+          - "  Decision Env   : {{ eda_decision_env }}"
+          - "============================================================"

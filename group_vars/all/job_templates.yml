@@ -181,4 +181,20 @@ controller_templates:
     extra_vars:
       splunk_password: "ansible123"
       splunk_image: "splunk/splunk:latest"
+
+  - name: Configure EDA Objects
+    description: >-
+      Create/update EDA credentials, project (Splunk-EDA-Project) and
+      rulebook activation (splunk-action-caac) on the target AAP instance.
+      Run this playbook when bootstrapping EDA on a new AAP or to re-apply
+      the EDA configuration after a change in the CaaC repo.
+    project: config_as_code
+    playbook: playbooks/eda_config.yml
+    inventory: config_as_code
+    execution_environment: "Default execution environment"
+    job_type: run
+    verbosity: 0
+    ask_variables_on_launch: true
+    extra_vars:
+      aap_verify_ssl: "false"
 ...
