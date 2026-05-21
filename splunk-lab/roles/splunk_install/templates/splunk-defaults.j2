@@ -1,0 +1,20 @@
+---
+general:
+  pass4SymmKey: "{{ splunk_symm_key }}"
+
+splunk:
+  hec:
+    enable: {{ splunk_hec_enabled | lower }}
+    ssl: {{ splunk_hec_ssl | lower }}
+    port: {{ splunk_hec_port }}
+    token: "{{ splunk_hec_token }}"
+
+  indexes:
+{% for idx in splunk_indexes %}
+    - name: {{ idx.name }}
+      datatype: event
+      homePath: "$SPLUNK_DB/{{ idx.name }}/db"
+      coldPath: "$SPLUNK_DB/{{ idx.name }}/colddb"
+      thawedPath: "$SPLUNK_DB/{{ idx.name }}/thaweddb"
+      maxTotalDataSizeMB: {{ idx.maxTotalDataSizeMB }}
+{% endfor %}

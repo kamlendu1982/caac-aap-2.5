@@ -1,0 +1,20 @@
+---
+- name: Enable and start splunk-lab systemd user service
+  ansible.builtin.systemd:
+    name: splunk-lab.service
+    state: started
+    enabled: true
+    scope: user
+    daemon_reload: true
+  become: false
+  become_user: "{{ ansible_user }}"
+
+- name: Wait for Splunk to become healthy
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}:{{ splunk_web_port }}/en-US/account/login"
+    status_code: 200
+    validate_certs: false
+  register: splunk_health
+  until: splunk_health.status == 200
+  retries: 20
+  delay: 10

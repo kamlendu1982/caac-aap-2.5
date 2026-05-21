@@ -1,0 +1,17 @@
+---
+- name: restart splunk
+  ansible.builtin.systemd:
+    name: splunk-lab.service
+    state: restarted
+    scope: user
+  become: false
+  become_user: "{{ ansible_user }}"
+
+- name: reload systemd and restart splunk
+  ansible.builtin.systemd:
+    name: splunk-lab.service
+    state: restarted
+    scope: user
+    daemon_reload: true
+  become: false
+  become_user: "{{ ansible_user }}"

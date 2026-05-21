@@ -1,0 +1,36 @@
+---
+- name: Template podman-compose.yml
+  ansible.builtin.template:
+    src: podman-compose.j2
+    dest: "{{ splunk_install_dir }}/podman-compose.yml"
+    owner: "{{ ansible_user }}"
+    mode: "0644"
+  notify: restart splunk
+
+- name: Template splunk-defaults.yml
+  ansible.builtin.template:
+    src: splunk-defaults.j2
+    dest: "{{ splunk_install_dir }}/splunk-defaults.yml"
+    owner: "{{ ansible_user }}"
+    mode: "0644"
+  notify: restart splunk
+
+- name: Create systemd user directory
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/.config/systemd/user"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Template splunk systemd user service
+  ansible.builtin.template:
+    src: splunk-systemd.j2
+    dest: "/home/{{ ansible_user }}/.config/systemd/user/splunk-lab.service"
+    owner: "{{ ansible_user }}"
+    mode: "0644"
+  notify: reload systemd and restart splunk
+
+- name: Enable lingering for ansible_user (survives logout/reboot)
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger {{ ansible_user }}"
+  changed_when: false

@@ -1,0 +1,27 @@
+---
+# Splunk install configuration
+splunk_version: "latest"
+splunk_container_name: "splunk"
+splunk_install_dir: "/opt/splunk-lab"
+
+# Port mappings
+splunk_web_port: 8000
+splunk_hec_port: 8088
+splunk_api_port: 8089
+splunk_fwd_port: 9997
+
+# HEC configuration
+splunk_hec_enabled: true
+splunk_hec_ssl: false
+
+# Indexes configuration
+splunk_indexes:
+  - name: lab_index
+    maxTotalDataSizeMB: 5120
+  - name: security_index
+    maxTotalDataSizeMB: 10240
+
+# Vault-backed credentials
+splunk_password: "{{ vault_splunk_password }}"
+splunk_hec_token: "{{ vault_splunk_hec_token }}"
+splunk_symm_key: "{{ vault_splunk_symm_key }}"

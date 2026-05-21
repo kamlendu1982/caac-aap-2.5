@@ -1,0 +1,7 @@
+---
+- name: Deploy Splunk Lab
+  hosts: splunk_hosts
+  gather_facts: true
+  roles:
+    - splunk_install
+    - splunk_configure

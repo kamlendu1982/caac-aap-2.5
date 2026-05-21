@@ -1,0 +1,36 @@
+# Splunk connection
+splunk_host: "localhost"
+splunk_web_port: 8000
+splunk_hec_port: 8088
+splunk_install_dir: "/opt/splunk-lab"
+splunk_hec_enabled: true
+splunk_hec_ssl: false
+splunk_image: "docker.io/splunk/splunk"
+splunk_version: "latest"
+splunk_container_name: "splunk"
+splunk_fwd_port: 9997
+
+splunk_indexes:
+  - name: lab_index
+    maxTotalDataSizeMB: 5120
+  - name: security_index
+    maxTotalDataSizeMB: 10240
+
+splunk_api_port: 8089
+splunk_validate_certs: false
+splunk_alert_app: "search"
+splunk_alert_index: "main"
+ 
+# EDA Webhook URL - get this from EDA Controller > Sources > Webhook
+eda_webhook_url: "http://10.0.1.183:5001"
+ 
+# Alert settings
+splunk_alert_name: "AAP Job Failures"
+splunk_alert_cron: "*/5 * * * *"
+splunk_alert_severity: 3 
+splunk_alert_expires: "24h"
+splunk_alert_throttle_window: "300"
+splunk_alert_throttle_field: "job_id"
+ 
+# Search query - tune to match your AAP log fields
+splunk_alert_search: "index=main sourcetype=httpevent (log_level=ERROR OR status=failed OR failed=true) | stats count by host, log_level, playbook, job_id | where count > 0"

@@ -1,0 +1,23 @@
+---
+services:
+  splunk:
+    image: docker.io/splunk/splunk:{{ splunk_version }}
+    container_name: {{ splunk_container_name }}
+    ports:
+      - "{{ splunk_web_port }}:8000"
+      - "{{ splunk_hec_port }}:8088"
+      - "8089:8089"
+      - "{{ splunk_fwd_port }}:9997"
+    environment:
+      SPLUNK_START_ARGS: "--accept-license"
+      SPLUNK_GENERAL_TERMS: "--accept-sgt-current-at-splunk-com"
+      SPLUNK_PASSWORD: "{{ splunk_password }}"
+      SPLUNK_DEFAULTS_URL: "/tmp/defaults/default.yml"
+    volumes:
+      - splunk-var:/opt/splunk/var
+      - splunk-etc:/opt/splunk/etc
+      - {{ splunk_install_dir }}/splunk-defaults.yml:/tmp/defaults/default.yml:ro,z
+
+volumes:
+  splunk-var:
+  splunk-etc:

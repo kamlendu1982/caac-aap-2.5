@@ -1,0 +1,15 @@
+[Unit]
+Description=Splunk Lab (podman-compose)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory={{ splunk_install_dir }}
+ExecStart=/usr/local/bin/podman-compose -f {{ splunk_install_dir }}/podman-compose.yml up -d
+ExecStop=/usr/local/bin/podman-compose -f {{ splunk_install_dir }}/podman-compose.yml down
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

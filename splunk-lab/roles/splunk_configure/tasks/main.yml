@@ -1,0 +1,64 @@
+---
+# Using shell+curl instead of uri module because Splunk's REST API
+# uses dot-notation keys (action.webhook, alert.severity) that conflict
+# with Ansible's form-urlencoded body parser.
+# Parameters validated manually via curl before adding to playbook.
+# Configured as real-time alert (is_scheduled=0, realtime_schedule=1, alert_type=always)
+
+- name: Create Splunk alert for AAP job failures
+  ansible.builtin.shell: |
+    curl -k -s -w "%{http_code}" \
+      -o /tmp/splunk_alert_create.xml \
+      -u "{{ splunk_admin_user }}:{{ splunk_admin_password }}" \
+      https://{{ splunk_host }}:{{ splunk_api_port }}/servicesNS/{{ splunk_admin_user }}/{{ splunk_alert_app }}/saved/searches \
+      -d "name={{ splunk_alert_name | replace(' ', '+') }}" \
+      -d "search={{ splunk_alert_search }}" \
+      -d "is_scheduled=0" \
+      -d "realtime_schedule=1" \
+      -d "alert_type=always" \
+      -d "alert.severity={{ splunk_alert_severity }}" \
+      -d "alert.expires={{ splunk_alert_expires }}" \
+      -d "alert.suppress=1" \
+      -d "alert.suppress.period={{ splunk_alert_throttle_window }}s" \
+      -d "alert.suppress.fields={{ splunk_alert_throttle_field }}" \
+      -d "actions=webhook" \
+      -d "action.webhook=1" \
+      -d "action.webhook.param.url={{ eda_webhook_url }}"
+  register: alert_create
+  changed_when: alert_create.stdout == '201'
+  failed_when: alert_create.stdout not in ['200', '201', '409']
+  no_log: false
+
+- name: Update existing alert if already present (409)
+  ansible.builtin.shell: |
+    curl -k -s -w "%{http_code}" \
+      -o /tmp/splunk_alert_update.xml \
+      -X POST \
+      -u "{{ splunk_admin_user }}:{{ splunk_admin_password }}" \
+      "https://{{ splunk_host }}:{{ splunk_api_port }}/servicesNS/{{ splunk_admin_user }}/{{ splunk_alert_app }}/saved/searches/{{ splunk_alert_name | replace(' ', '%20') }}" \
+      -d "search={{ splunk_alert_search }}" \
+      -d "is_scheduled=0" \
+      -d "realtime_schedule=1" \
+      -d "alert_type=always" \
+      -d "alert.severity={{ splunk_alert_severity }}" \
+      -d "alert.expires={{ splunk_alert_expires }}" \
+      -d "alert.suppress=1" \
+      -d "alert.suppress.period={{ splunk_alert_throttle_window }}s" \
+      -d "alert.suppress.fields={{ splunk_alert_throttle_field }}" \
+      -d "actions=webhook" \
+      -d "action.webhook=1" \
+      -d "action.webhook.param.url={{ eda_webhook_url }}"
+  register: alert_update
+  changed_when: alert_update.stdout == '200'
+  failed_when: alert_update.stdout != '200'
+  when: alert_create.stdout == '409'
+  no_log: false
+
+- name: Show alert status
+  ansible.builtin.debug:
+    msg: >-
+      Alert '{{ splunk_alert_name }}'
+      {{ 'created' if alert_create.stdout == '201' else
+         'updated' if alert_create.stdout == '409' else
+         'already up to date' }}
+      successfully

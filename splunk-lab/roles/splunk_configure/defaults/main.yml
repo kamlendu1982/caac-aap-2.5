@@ -1,0 +1,25 @@
+---
+# Splunk API connection
+splunk_host: "localhost"
+splunk_api_port: 8089
+splunk_alert_app: "search"
+splunk_validate_certs: false
+
+# Splunk admin credentials (vault-backed)
+splunk_admin_user: "admin"
+splunk_admin_password: "{{ vault_splunk_admin_password }}"
+
+# Alert configuration (real-time)
+splunk_alert_name: "AAP Job Failures"
+#splunk_alert_search: "index=main sourcetype=httpevent (level=ERROR OR status=failed OR failed=true)"
+splunk_alert_search: 'index=main sourcetype=httpevent cluster_host_id="ip-10-0-1-183.us-east-2.compute.internal"'
+# Alert behavior settings
+# alert.severity must be integer string 1-6: 1=debug,2=info,3=warn,4=error,5=severe,6=fatal
+splunk_alert_severity: "3"
+splunk_alert_expires: "24h"
+splunk_alert_throttle_window: "300"
+splunk_alert_throttle_field: "job_id"
+
+# EDA webhook configuration (provided at runtime)
+# eda_webhook_url: "http://eda-controller:5001/endpoint"
+eda_webhook_token: "{{ vault_eda_webhook_token | default('') }}"

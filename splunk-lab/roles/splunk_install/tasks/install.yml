@@ -1,0 +1,47 @@
+---
+- name: Install pip3 if not present
+  ansible.builtin.package:
+    name: python3-pip
+    state: present
+
+- name: Install podman-compose via pip
+  ansible.builtin.pip:
+    name: podman-compose
+    state: present
+    executable: pip3
+
+- name: Enable and start podman socket for ansible_user
+  ansible.builtin.systemd:
+    name: podman.socket
+    state: started
+    enabled: true
+    scope: user
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid.stdout | default('1000') }}"
+  ignore_errors: true  # non-fatal; podman works without the socket for basic use
+
+- name: Create Splunk lab directory
+  ansible.builtin.file:
+    path: "{{ splunk_install_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Get UID of ansible_user
+  ansible.builtin.command:
+    cmd: "id -u {{ ansible_user }}"
+  register: ansible_user_uid
+  changed_when: false
+
+- name: Pull Splunk image as ansible_user (rootless podman store)
+  ansible.builtin.command:
+    cmd: "podman pull docker.io/splunk/splunk:{{ splunk_version }}"
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid.stdout }}"
+    HOME: "/home/{{ ansible_user }}"
+  register: podman_pull
+  changed_when: "'Copying' in podman_pull.stdout"
