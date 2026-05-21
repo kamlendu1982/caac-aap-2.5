@@ -101,13 +101,20 @@ controller_templates:
     execution_environment: aap-drift-manager-ee
     job_type: run
     concurrent_jobs_enabled: false
-    ask_variables_on_launch: false
+    ask_variables_on_launch: true
     webhook_service: "github"
     webhook_credential: "RQJeF5mwV3cZgpOeznkLH8jQdj98kuvNnYn12ROvvsHZQsOoG5"
     verbosity: 0
     credentials:
       - drift_manager_secrets
     extra_vars:
+      # --- Run mode ---
+      # drift_apply: false = dry-run (report only, no changes)
+      # drift_apply: true  = apply changes (create / update / delete)
+      # Override at launch time via the "Extra Variables" prompt.
+      drift_apply: false
+      drift_objects: ""
+
       # --- LLM / MaaS endpoint (non-sensitive) ---
       maas_api_base: "https://litellm-prod.apps.maas.redhatworkshops.io/v1"
       maas_model: "llama-scout-17b"
