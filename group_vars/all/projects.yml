@@ -41,7 +41,7 @@ controller_projects:
     organization: Default
     scm_type: git
     scm_url: git@github.com:kamlendu1982/aap-drift-manager.git
-    scm_branch: "read_aap_mcp"
+    scm_branch: "main"
     scm_clean: true
     scm_update_on_launch: true
     scm_credential: "Kam-github"
