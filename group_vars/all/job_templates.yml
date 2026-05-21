@@ -126,7 +126,7 @@ controller_templates:
       protected_objects: "Default"
 
       # --- Run mode (false = dry-run, true = apply changes) ---
-      drift_apply: false
+      drift_apply: true
       drift_objects: ""
 
   - name: PS-long-running-waitfor-checkWinRM
@@ -195,6 +195,7 @@ controller_templates:
     job_type: run
     verbosity: 0
     ask_variables_on_launch: true
+    ask_inventory_on_launch: true
     extra_vars:
       aap_verify_ssl: "false"
 ...

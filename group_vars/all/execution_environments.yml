@@ -1,12 +1,12 @@
 ---
 controller_execution_environments:
   - name: "supported"
-    image: "{{ ah_hostname }}/ee-supported-rhel8"
+    image: "api25.tail8061e4.ts.net/ee-supported-rhel8"
     pull: always
     credential: cr_ah
 
   - name: "minimal"
-    image: "{{ ah_hostname }}/ee-minimal-rhel8"
+    image: "api25.tail8061e4.ts.net/ee-minimal-rhel8"
     pull: always
     credential: cr_ah
 
