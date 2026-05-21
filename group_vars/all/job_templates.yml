@@ -195,7 +195,7 @@ controller_templates:
       rulebook activation (splunk-action-caac) on the target AAP instance.
       Run this playbook when bootstrapping EDA on a new AAP or to re-apply
       the EDA configuration after a change in the CaaC repo.
-    project: config_as_code
+    project: caac_aap_25
     playbook: playbooks/eda_config.yml
     inventory: config_as_code
     execution_environment: "Default execution environment"
