@@ -201,7 +201,6 @@ controller_templates:
     execution_environment: "Default execution environment"
     job_type: run
     verbosity: 0
-    ask_variables_on_launch: true
     ask_inventory_on_launch: true
     extra_vars:
       aap_verify_ssl: "false"
