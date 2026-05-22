@@ -125,7 +125,7 @@ controller_templates:
       aap_verify_ssl: "false"
 
       # --- Git CaaC repository ---
-      git_repo_path: "git@github.com:kamlendu1982/caac-aap-2.5.git"
+      git_repo_path: "https://github.com/kamlendu1982/caac-aap-2.5.git"
       git_branch: "main"
 
       # --- Guardrails ---

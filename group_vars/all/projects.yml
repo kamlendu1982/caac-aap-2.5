@@ -40,11 +40,11 @@ controller_projects:
     description: Config-as-Code repository for AAP 2.5 (source of truth for drift manager)
     organization: config_as_code
     scm_type: git
-    scm_url: git@github.com:kamlendu1982/caac-aap-2.5.git
+    scm_url: https://github.com/kamlendu1982/caac-aap-2.5.git 
     scm_branch: "main"
     scm_clean: true
     scm_update_on_launch: true
-    scm_credential: "Kam-github"
+    scm_credential: ""
     update_project: true
     wait: true
 
