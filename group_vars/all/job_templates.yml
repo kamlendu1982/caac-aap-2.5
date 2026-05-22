@@ -132,10 +132,6 @@ controller_templates:
       no_delete_types: "credentials"
       protected_objects: "Default"
 
-      # --- Run mode (false = dry-run, true = apply changes) ---
-      drift_apply: true
-      drift_objects: ""
-
   - name: PS-long-running-waitfor-checkWinRM
     project: windows_usecases
     job_type: run
