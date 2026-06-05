@@ -1,6 +1,20 @@
 ---
 all:
   children:
+    conjur_host:
+      hosts:
+        # Replace conjur-vm / ansible_host with your Conjur server name or IP
+        conjur-vm:
+          ansible_host: ec2-3-140-186-59.us-east-2.compute.amazonaws.com 
+          ansible_user: ec2-user
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
+          ansible_become: true
+          ansible_become_method: sudo
+          # Optional per-host overrides for deploy_cyberArk_conjur.yml:
+          # conjur_account: myConjurAccount
+          # conjur_admin_pass: "{{ vault_conjur_admin_pass }}"
+          # conjur_dir: /opt/conjur
+          # See CONJUR_AAP_INTEGRATION.md for AAP credential setup after deploy.
     automationcontroller:
       hosts:
         control:

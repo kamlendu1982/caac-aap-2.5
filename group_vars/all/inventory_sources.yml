@@ -10,4 +10,14 @@ controller_inventory_sources:
     overwrite: true
     overwrite_vars: true
     update_cache_timeout: 0
+  - name: conjur_host_source
+    organization: Default
+    source: "Sourced from a Project"
+    source_project: caac_aap_25
+    source_path: inventory.yml
+    inventory: conjur_host
+    credential: ""
+    overwrite: true
+    overwrite_vars: true
+    update_cache_timeout: 0
 ...

@@ -1,0 +1,774 @@
+---
+# =============================================================================
+# Deploy CyberArk Conjur OSS — Podman variant (RHEL/Fedora)
+# Source: https://github.com/kamlendu1982/conjur-quickstart
+#
+# Implements the "Set up a Conjur Open Source environment" and optional
+# BotApp policy steps from the conjur-quickstart README.
+#
+# Inventory: define target host(s) under the conjur_host group (see inventory.yml)
+#
+# Extra vars (optional overrides):
+#   conjur_account:         myConjurAccount
+#   conjur_admin_pass:      MySecretP@SS1   (12–128 chars, complexity rules apply)
+#   conjur_dir:             /opt/conjur
+#   conjur_load_sample_policy: false  (BotApp demo — off by default)
+#   conjur_start_demo_services: false (bot_app + pgadmin — off by default)
+#   conjur_configure_client:    true   (conjur CLI init on client container)
+#   conjur_enable_systemd:      true   (auto-start containers on EC2 reboot)
+#   conjur_force_client_init:   false  (re-run conjur init even if already configured)
+#   conjur_load_default_secret: true   (load db_password variable for AAP lab testing)
+#
+# After deploy, see CONJUR_AAP_INTEGRATION.md for AAP credential setup.
+#
+# Run:
+#   ansible-playbook playbooks/deploy_cyberArk_conjur.yml -i inventory.yml
+#
+#   ansible-playbook playbooks/deploy_cyberArk_conjur.yml -i inventory.yml \
+#     -e "conjur_account=myConjurAccount conjur_admin_pass='MySecretP@SS1'"
+# =============================================================================
+
+- name: Deploy CyberArk Conjur OSS using Podman
+  hosts: conjur_host
+  become: true
+  gather_facts: true
+
+  vars:
+    conjur_account:            "myConjurAccount"
+    conjur_admin_pass:         "MySecretP@SS1"
+    conjur_dir:                "/opt/conjur"
+    conjur_repo:               "https://github.com/kamlendu1982/conjur-quickstart.git"
+    conjur_data_key_file:      "{{ conjur_dir }}/data_key"
+    conjur_admin_data_file:    "{{ conjur_dir }}/admin_data"
+    conjur_app_data_file:      "{{ conjur_dir }}/my_app_data"
+    conjur_load_sample_policy: false
+    conjur_start_demo_services: false
+    conjur_configure_client:   true
+    conjur_enable_systemd:     true
+    conjur_force_client_init:  false
+    conjur_load_default_secret: true
+    conjur_default_secret_name: "db_password"
+    conjur_default_secret_value: "SuperSecret123!"
+
+  tasks:
+
+    # ── Prerequisites ─────────────────────────────────────────────────────────
+
+    - name: Install Podman and required packages
+      ansible.builtin.dnf:
+        name:
+          - podman
+          - git
+          - curl
+          - openssl
+        state: present
+        update_cache: true
+
+    - name: Install podman-compose from dnf when available
+      ansible.builtin.dnf:
+        name: podman-compose
+        state: present
+      register: podman_compose_dnf
+      failed_when: false
+
+    - name: Install podman-compose via pip when not available from dnf
+      ansible.builtin.pip:
+        name: podman-compose
+        state: present
+        executable: pip3
+      when: podman_compose_dnf is failed
+
+    - name: Locate podman-compose executable
+      ansible.builtin.command: bash -lc 'command -v podman-compose'
+      register: podman_compose_path
+      changed_when: false
+      failed_when: podman_compose_path.rc != 0
+
+    - name: Set podman-compose command fact
+      ansible.builtin.set_fact:
+        conjur_compose_cmd: "{{ podman_compose_path.stdout | trim }}"
+
+    - name: Verify Podman is available
+      ansible.builtin.command: podman --version
+      register: podman_version
+      changed_when: false
+
+    - name: Show Podman version
+      ansible.builtin.debug:
+        msg: "{{ podman_version.stdout }}"
+
+    # ── Clone repository ──────────────────────────────────────────────────────
+
+    - name: Create Conjur install directory
+      ansible.builtin.file:
+        path: "{{ conjur_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Override RHEL short-name aliases for Conjur images
+      ansible.builtin.copy:
+        dest: /etc/containers/registries.conf.d/010-conjur-override.conf
+        content: |
+          [[registry]]
+          prefix = "cyberark"
+          location = "docker.io/cyberark"
+          insecure = false
+          [[registry]]
+          prefix = "postgres"
+          location = "docker.io/library/postgres"
+          insecure = false
+          [[registry]]
+          prefix = "nginx"
+          location = "docker.io/library/nginx"
+          insecure = false
+        mode: "0644"
+
+    - name: Clone conjur-quickstart repository
+      ansible.builtin.git:
+        repo: "{{ conjur_repo }}"
+        dest: "{{ conjur_dir }}"
+        version: main
+        force: true
+
+    # ── Pull container images ───────────────────────────────────────────────────
+
+    - name: Pull Conjur images via podman-compose
+      ansible.builtin.command:
+        cmd: "{{ conjur_compose_cmd }} pull"
+        chdir: "{{ conjur_dir }}"
+      register: podman_pull
+      changed_when: podman_pull.rc == 0
+
+    # ── Generate master data key ────────────────────────────────────────────────
+
+    - name: Check if data key already exists
+      ansible.builtin.stat:
+        path: "{{ conjur_data_key_file }}"
+      register: data_key_stat
+
+    - name: Generate Conjur master data key
+      ansible.builtin.shell: |
+        set -o pipefail
+        {{ conjur_compose_cmd }} run --no-deps --rm conjur data-key generate > {{ conjur_data_key_file }}
+      args:
+        chdir: "{{ conjur_dir }}"
+      when: not data_key_stat.stat.exists
+
+    - name: Secure data key file permissions
+      ansible.builtin.file:
+        path: "{{ conjur_data_key_file }}"
+        mode: "0600"
+
+    - name: Read data key from file
+      ansible.builtin.slurp:
+        src: "{{ conjur_data_key_file }}"
+      register: data_key_content
+      no_log: true
+
+    - name: Set data key fact
+      ansible.builtin.set_fact:
+        conjur_data_key: "{{ data_key_content.content | b64decode | trim }}"
+      no_log: true
+
+    # ── Start Conjur (staged — never use "podman-compose up", it hangs) ────────
+    # Pattern: "create --no-deps" (instant) then "podman start" (instant).
+
+    - name: Ensure TLS directory exists
+      ansible.builtin.file:
+        path: "{{ conjur_dir }}/conf/tls"
+        state: directory
+        mode: "0755"
+
+    - name: Check if TLS certificates already exist
+      ansible.builtin.stat:
+        path: "{{ conjur_dir }}/conf/tls/nginx.crt"
+      register: tls_cert_stat
+
+    - name: Generate TLS certificates via openssl container
+      ansible.builtin.command:
+        cmd: "{{ conjur_compose_cmd }} run --rm --no-deps openssl"
+        chdir: "{{ conjur_dir }}"
+      when: not tls_cert_stat.stat.exists
+      register: openssl_run
+      changed_when: openssl_run.rc == 0
+
+    - name: Wait for TLS certificate files
+      ansible.builtin.wait_for:
+        path: "{{ conjur_dir }}/conf/tls/nginx.crt"
+        timeout: 60
+
+    - name: Create PostgreSQL container
+      ansible.builtin.command:
+        cmd: "{{ conjur_compose_cmd }} create --no-deps database"
+        chdir: "{{ conjur_dir }}"
+      register: db_create
+      failed_when: false
+      changed_when: db_create.rc == 0
+
+    - name: Start PostgreSQL database
+      ansible.builtin.command: podman start postgres_database
+      register: db_start
+      failed_when: false
+      changed_when: db_start.rc == 0
+
+    - name: Wait for PostgreSQL port
+      ansible.builtin.wait_for:
+        port: 8432
+        host: 127.0.0.1
+        timeout: 120
+
+    - name: Create Conjur server container
+      ansible.builtin.command:
+        cmd: "{{ conjur_compose_cmd }} create --no-deps conjur"
+        chdir: "{{ conjur_dir }}"
+      environment:
+        CONJUR_DATA_KEY: "{{ conjur_data_key }}"
+      register: conjur_create
+      failed_when: false
+      changed_when: conjur_create.rc == 0
+
+    - name: Start Conjur server
+      ansible.builtin.command: podman start conjur_server
+      register: conjur_start
+      failed_when: false
+      changed_when: conjur_start.rc == 0
+
+    - name: Wait for Conjur server to be ready
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:8080"
+        validate_certs: false
+        status_code: 200
+      register: conjur_health
+      until: conjur_health.status == 200
+      retries: 30
+      delay: 10
+
+    - name: Create nginx proxy container
+      ansible.builtin.command:
+        cmd: "{{ conjur_compose_cmd }} create --no-deps proxy"
+        chdir: "{{ conjur_dir }}"
+      register: proxy_create
+      failed_when: false
+      changed_when: proxy_create.rc == 0
+
+    - name: Start nginx proxy
+      ansible.builtin.command: podman start nginx_proxy
+      register: nginx_start
+      failed_when: false
+      changed_when: nginx_start.rc == 0
+
+    - name: Create Conjur CLI client container
+      ansible.builtin.command:
+        cmd: "{{ conjur_compose_cmd }} create --no-deps client"
+        chdir: "{{ conjur_dir }}"
+      register: client_create
+      failed_when: false
+      changed_when: client_create.rc == 0
+      when: conjur_configure_client | bool
+
+    - name: Start Conjur CLI client
+      ansible.builtin.command: podman start conjur_client
+      register: client_start
+      failed_when: false
+      changed_when: client_start.rc == 0
+      when: conjur_configure_client | bool
+
+    - name: Create demo bot_app container
+      ansible.builtin.command:
+        cmd: "{{ conjur_compose_cmd }} create --no-deps bot_app"
+        chdir: "{{ conjur_dir }}"
+      register: bot_create
+      failed_when: false
+      changed_when: bot_create.rc == 0
+      when: conjur_start_demo_services | bool
+
+    - name: Start demo bot_app container
+      ansible.builtin.command: podman start bot_app
+      register: bot_start
+      failed_when: false
+      changed_when: bot_start.rc == 0
+      when: conjur_start_demo_services | bool
+
+    - name: Create demo pgadmin container
+      ansible.builtin.command:
+        cmd: "{{ conjur_compose_cmd }} create --no-deps pgadmin"
+        chdir: "{{ conjur_dir }}"
+      register: pgadmin_create
+      failed_when: false
+      changed_when: pgadmin_create.rc == 0
+      when: conjur_start_demo_services | bool
+
+    - name: Start demo pgadmin container
+      ansible.builtin.shell: podman start conjur_pgadmin_1 2>/dev/null || podman start pgadmin 2>/dev/null || true
+      register: pgadmin_start
+      failed_when: false
+      changed_when: pgadmin_start.rc == 0
+      when: conjur_start_demo_services | bool
+
+    - name: Wait for nginx proxy to respond
+      ansible.builtin.uri:
+        url: "https://127.0.0.1:8443/health"
+        validate_certs: false
+        status_code: [200, 401]
+      register: proxy_health
+      until: proxy_health.status in [200, 401]
+      retries: 20
+      delay: 5
+
+    # ── Create admin account ──────────────────────────────────────────────────
+
+    - name: Check if admin account already created
+      ansible.builtin.stat:
+        path: "{{ conjur_admin_data_file }}"
+      register: admin_data_stat
+
+    - name: Create Conjur account with predefined admin password
+      ansible.builtin.shell: |
+        set -o pipefail
+        podman exec -i conjur_server bash -c \
+          'echo -n "{{ conjur_admin_pass }}" | conjurctl account create \
+          --password-from-stdin \
+          --name {{ conjur_account }}' > {{ conjur_admin_data_file }}
+      args:
+        chdir: "{{ conjur_dir }}"
+      when: not admin_data_stat.stat.exists
+      no_log: true
+      register: account_create
+
+    - name: Retrieve admin API key
+      ansible.builtin.command: >-
+        podman exec conjur_server
+        conjurctl role retrieve-key {{ conjur_account }}:user:admin
+      register: admin_api_key
+      changed_when: false
+      no_log: true
+      when: not admin_data_stat.stat.exists
+
+    - name: Save admin API key alongside account data
+      ansible.builtin.lineinfile:
+        path: "{{ conjur_admin_data_file }}"
+        line: "Admin API Key: {{ admin_api_key.stdout_lines | last | trim }}"
+        create: true
+        mode: "0600"
+      no_log: true
+      when:
+        - not admin_data_stat.stat.exists
+        - admin_api_key.stdout_lines | length > 0
+
+    - name: Secure admin data file permissions
+      ansible.builtin.file:
+        path: "{{ conjur_admin_data_file }}"
+        mode: "0600"
+
+    - name: Check if admin API key is recorded in admin_data
+      ansible.builtin.command: grep -q "Admin API Key:" {{ conjur_admin_data_file }}
+      register: api_key_in_file
+      failed_when: false
+      changed_when: false
+
+    - name: Retrieve admin API key when missing from admin_data
+      ansible.builtin.command: >-
+        podman exec conjur_server
+        conjurctl role retrieve-key {{ conjur_account }}:user:admin
+      register: admin_api_key_refresh
+      changed_when: false
+      no_log: true
+      when: api_key_in_file.rc != 0
+
+    - name: Append admin API key to admin_data when missing
+      ansible.builtin.lineinfile:
+        path: "{{ conjur_admin_data_file }}"
+        line: "Admin API Key: {{ admin_api_key_refresh.stdout_lines | last | trim }}"
+        mode: "0600"
+      no_log: true
+      when:
+        - api_key_in_file.rc != 0
+        - admin_api_key_refresh.stdout_lines | length > 0
+
+    - name: Refresh admin_data file stat
+      ansible.builtin.stat:
+        path: "{{ conjur_admin_data_file }}"
+      register: admin_data_final
+
+    - name: Read admin API key from admin_data
+      ansible.builtin.shell: grep "Admin API Key:" {{ conjur_admin_data_file }} | sed 's/^Admin API Key: //'
+      register: conjur_admin_api_key
+      changed_when: false
+      no_log: true
+      when: admin_data_final.stat.exists
+
+    # ── Connect Conjur client ─────────────────────────────────────────────────
+
+    - name: Check if Conjur client is already initialized
+      ansible.builtin.command: podman exec conjur_client test -f /home/cli/.conjurrc
+      register: client_conjurrc
+      failed_when: false
+      changed_when: false
+      when: conjur_configure_client | bool
+
+    - name: Read account name from client conjurrc
+      ansible.builtin.shell: podman exec conjur_client grep '^account:' /home/cli/.conjurrc | awk '{print $2}'
+      register: client_conjurrc_account
+      failed_when: false
+      changed_when: false
+      when:
+        - conjur_configure_client | bool
+        - client_conjurrc.rc == 0
+
+    - name: Remove stale Conjur client configuration
+      ansible.builtin.command: >-
+        podman exec conjur_client
+        rm -f /home/cli/.conjurrc /home/cli/conjur-server.pem
+      when:
+        - conjur_configure_client | bool
+        - >-
+          conjur_force_client_init | bool or client_conjurrc.rc != 0 or
+          (client_conjurrc_account.stdout | default('') | trim != conjur_account) or
+          (account_create is defined and account_create is changed)
+
+    - name: Connect Conjur client to server
+      ansible.builtin.shell: |
+        set -o pipefail
+        printf 'y\n' | podman exec -i conjur_client conjur init \
+          -u https://proxy \
+          -a {{ conjur_account }} \
+          --self-signed
+      args:
+        chdir: "{{ conjur_dir }}"
+      register: client_init
+      changed_when: client_init.rc == 0
+      failed_when: client_init.rc != 0
+      when:
+        - conjur_configure_client | bool
+        - >-
+          conjur_force_client_init | bool or client_conjurrc.rc != 0 or
+          (client_conjurrc_account.stdout | default('') | trim != conjur_account) or
+          (account_create is defined and account_create is changed)
+
+    - name: Conjur client already initialized — skipping conjur init
+      ansible.builtin.debug:
+        msg: "Client already configured for account {{ conjur_account }}. Set conjur_force_client_init=true to re-init."
+      when:
+        - conjur_configure_client | bool
+        - client_conjurrc.rc == 0
+        - client_conjurrc_account.stdout | default('') | trim == conjur_account
+        - not (conjur_force_client_init | bool)
+        - not (account_create is defined and account_create is changed)
+
+    # ── Auto-start on reboot (EC2 stop/start) ─────────────────────────────────
+
+    - name: Install Conjur container startup script
+      ansible.builtin.copy:
+        dest: /usr/local/bin/conjur-containers-start.sh
+        mode: "0755"
+        content: |
+          #!/bin/bash
+          # Start Conjur OSS podman containers in dependency order after reboot.
+          set -uo pipefail
+
+          start_container() {
+            local name="$1"
+            if podman container exists "$name" 2>/dev/null; then
+              podman start "$name" 2>/dev/null || true
+            fi
+          }
+
+          start_container postgres_database
+          sleep 5
+          start_container conjur_server
+          sleep 10
+          start_container nginx_proxy
+          start_container conjur_client
+          start_container bot_app
+          start_container conjur_pgadmin_1
+      when: conjur_enable_systemd | bool
+
+    - name: Install Conjur systemd unit
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/conjur-containers.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=CyberArk Conjur OSS Podman containers
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          ExecStart=/usr/local/bin/conjur-containers-start.sh
+          ExecStop=/usr/bin/podman stop -t 10 nginx_proxy conjur_client conjur_server postgres_database bot_app conjur_pgadmin_1
+          TimeoutStartSec=300
+
+          [Install]
+          WantedBy=multi-user.target
+      when: conjur_enable_systemd | bool
+
+    - name: Enable Conjur containers to start on boot
+      ansible.builtin.systemd:
+        name: conjur-containers.service
+        enabled: true
+        daemon_reload: true
+      when: conjur_enable_systemd | bool
+
+    # ── Verify deployment ─────────────────────────────────────────────────────
+
+    - name: List running Podman containers
+      ansible.builtin.command: podman ps --format "table {{ '{{' }}.Names{{ '}}' }}\t{{ '{{' }}.Status{{ '}}' }}\t{{ '{{' }}.Ports{{ '}}' }}"
+      register: podman_ps
+      changed_when: false
+
+    - name: Show running containers
+      ansible.builtin.debug:
+        msg: "{{ podman_ps.stdout_lines }}"
+
+    - name: Check Conjur health endpoint via nginx proxy
+      ansible.builtin.uri:
+        url: "https://127.0.0.1:8443/health"
+        validate_certs: false
+        return_content: true
+        status_code: [200, 401]
+      register: health_check
+      changed_when: false
+
+    - name: Display deployment summary
+      ansible.builtin.debug:
+        msg:
+          - "========================================="
+          - "Conjur OSS Deployment Complete (Podman)"
+          - "========================================="
+          - "Target host      : {{ inventory_hostname }} ({{ ansible_host }})"
+          - "Private IP       : {{ ansible_default_ipv4.address | default('n/a') }}"
+          - "Conjur API (TLS) : https://{{ ansible_default_ipv4.address | default(ansible_host) }}:8443"
+          - "Conjur direct    : http://{{ ansible_default_ipv4.address | default(ansible_host) }}:8080  (recommended for AAP lab)"
+          - "pgAdmin          : http://{{ ansible_host }}:8081 (if demo services enabled)"
+          - "Account name     : {{ conjur_account }}"
+          - "Admin username   : admin"
+          - "Admin data file  : {{ conjur_admin_data_file }}"
+          - "Data key file    : {{ conjur_data_key_file }}"
+          - "Lab secret name  : {{ conjur_default_secret_name }} (if conjur_load_default_secret=true)"
+          - "Health status    : {{ health_check.status }}"
+          - "Auto-start       : enabled via conjur-containers.service (if conjur_enable_systemd=true)"
+          - "AAP integration  : see CONJUR_AAP_INTEGRATION.md in repo root"
+          - "Tip (AWS)        : use private IP when AAP is in the same VPC; allow SG port 8080"
+          - "========================================="
+          - "On the VM:"
+          - "  podman ps"
+          - "  grep 'Admin API Key' {{ conjur_admin_data_file }}"
+          - "  cat {{ conjur_dir }}/conf/tls/nginx.crt"
+          - "  podman exec -it conjur_client sh"
+          - "  cd {{ conjur_dir }} && {{ conjur_compose_cmd }} down"
+          - "========================================="
+          - "Demo only — not for production"
+          - "Secure admin_data and data_key files"
+          - "========================================="
+
+    # ── Load sample BotApp policy (optional) ──────────────────────────────────
+
+    - name: Check if sample policy already loaded
+      ansible.builtin.stat:
+        path: "{{ conjur_app_data_file }}"
+      register: app_data_stat
+      when: conjur_load_sample_policy | bool
+
+    - name: Log in to Conjur as admin
+      ansible.builtin.command:
+        argv:
+          - podman
+          - exec
+          - conjur_client
+          - conjur
+          - login
+          - -i
+          - admin
+          - -p
+          - "{{ conjur_admin_api_key.stdout | trim }}"
+      no_log: true
+      register: conjur_login
+      failed_when: conjur_login.rc != 0
+      when:
+        - conjur_load_sample_policy | bool
+        - not app_data_stat.stat.exists
+
+    - name: Load sample BotApp policy
+      ansible.builtin.shell: |
+        set -o pipefail
+        podman exec -i conjur_client conjur policy load \
+          -b root \
+          -f policy/BotApp.yml > {{ conjur_app_data_file }}
+      args:
+        chdir: "{{ conjur_dir }}"
+      register: policy_load
+      changed_when: "'Loaded policy' in policy_load.stdout"
+      when:
+        - conjur_load_sample_policy | bool
+        - not app_data_stat.stat.exists
+
+    - name: Secure app data file permissions
+      ansible.builtin.file:
+        path: "{{ conjur_app_data_file }}"
+        mode: "0600"
+      when:
+        - conjur_load_sample_policy | bool
+        - app_data_stat.stat.exists or (policy_load is defined and policy_load is changed)
+
+    - name: Log out from Conjur
+      ansible.builtin.command:
+        cmd: podman exec conjur_client conjur logout
+      changed_when: false
+      when: conjur_load_sample_policy | bool
+
+    # ── Load default lab secret for AAP integration ───────────────────────────
+
+    - name: Deploy default AAP lab secret policy file
+      ansible.builtin.copy:
+        dest: "{{ conjur_dir }}/conf/policy/aap-lab-secret.yml"
+        mode: "0644"
+        content: |
+          - !variable {{ conjur_default_secret_name }}
+          - !permit
+            role: !user admin
+            privileges: [read, update]
+            resource: !variable {{ conjur_default_secret_name }}
+      when: conjur_load_default_secret | bool
+
+    - name: Check if default lab secret policy marker exists
+      ansible.builtin.stat:
+        path: "{{ conjur_dir }}/.aap_lab_secret_loaded"
+      register: aap_secret_marker
+      when: conjur_load_default_secret | bool
+
+    - name: Log in to Conjur as admin for default secret setup
+      ansible.builtin.command:
+        argv:
+          - podman
+          - exec
+          - conjur_client
+          - conjur
+          - login
+          - -i
+          - admin
+          - -p
+          - "{{ conjur_admin_api_key.stdout | trim }}"
+      no_log: true
+      register: conjur_login_default
+      failed_when: conjur_login_default.rc != 0
+      when:
+        - conjur_load_default_secret | bool
+        - not aap_secret_marker.stat.exists
+
+    - name: Load default AAP lab secret policy
+      ansible.builtin.command:
+        argv:
+          - podman
+          - exec
+          - conjur_client
+          - conjur
+          - policy
+          - load
+          - -b
+          - root
+          - -f
+          - /policy/aap-lab-secret.yml
+      register: aap_policy_load
+      changed_when: aap_policy_load.rc == 0
+      when:
+        - conjur_load_default_secret | bool
+        - not aap_secret_marker.stat.exists
+
+    - name: Set default AAP lab secret value
+      ansible.builtin.command:
+        argv:
+          - podman
+          - exec
+          - conjur_client
+          - conjur
+          - variable
+          - set
+          - -i
+          - "{{ conjur_default_secret_name }}"
+          - -v
+          - "{{ conjur_default_secret_value }}"
+      no_log: true
+      register: aap_secret_set
+      changed_when: aap_secret_set.rc == 0
+      when:
+        - conjur_load_default_secret | bool
+        - not aap_secret_marker.stat.exists
+
+    - name: Mark default AAP lab secret as loaded
+      ansible.builtin.file:
+        path: "{{ conjur_dir }}/.aap_lab_secret_loaded"
+        state: touch
+        mode: "0600"
+      when:
+        - conjur_load_default_secret | bool
+        - not aap_secret_marker.stat.exists
+        - aap_policy_load.rc == 0
+        - aap_secret_set.rc == 0
+
+    - name: Log out from Conjur after default secret setup
+      ansible.builtin.command:
+        cmd: podman exec conjur_client conjur logout
+      changed_when: false
+      when:
+        - conjur_load_default_secret | bool
+        - not aap_secret_marker.stat.exists
+
+    # ── AAP integration summary ───────────────────────────────────────────────
+
+    - name: Write AAP integration summary file on Conjur host
+      ansible.builtin.copy:
+        dest: "{{ conjur_dir }}/AAP_INTEGRATION.txt"
+        mode: "0600"
+        content: |
+          CyberArk Conjur — AAP Integration Details (lab)
+          ================================================
+          Generated: {{ ansible_date_time.iso8601 | default('n/a') }}
+          Target    : {{ inventory_hostname }} ({{ ansible_host }})
+
+          AAP Credential Type: CyberArk Conjur Secrets Manager Lookup
+          ------------------------------------------------
+          Conjur URL              : http://{{ ansible_default_ipv4.address | default(ansible_host) }}:8080
+          Conjur URL (HTTPS opt.) : https://{{ ansible_default_ipv4.address | default(ansible_host) }}:8443
+          Account                 : {{ conjur_account }}
+          Username                : admin
+          API Key                 : {{ conjur_admin_api_key.stdout | default('') | trim }}
+          Public Key Certificate  : leave blank for HTTP lab
+                                    or: cat {{ conjur_dir }}/conf/tls/nginx.crt
+
+          Test / Secret Identifier: {{ conjur_default_secret_name }}
+          Secret Version          : (leave blank — use latest)
+
+          Verify from AAP VM (same VPC):
+            curl -sk -w "\nHTTP: %{http_code}\n" \
+              http://{{ ansible_default_ipv4.address | default(ansible_host) }}:8080/health
+
+          Files on this host:
+            {{ conjur_admin_data_file }}
+            {{ conjur_data_key_file }}
+            {{ conjur_dir }}/conf/tls/nginx.crt
+
+          Documentation: CONJUR_AAP_INTEGRATION.md (repo root)
+          Demo only — not for production
+      no_log: true
+      when:
+        - admin_data_final.stat.exists
+        - conjur_admin_api_key.stdout is defined
+        - conjur_admin_api_key.stdout | length > 0
+
+    - name: Display AAP integration details for credential setup
+      ansible.builtin.debug:
+        msg:
+          - "======== AAP Integration Details (lab) ========"
+          - "Credential type : CyberArk Conjur Secrets Manager Lookup"
+          - "Conjur URL      : http://{{ ansible_default_ipv4.address | default(ansible_host) }}:8080"
+          - "Account         : {{ conjur_account }}"
+          - "Username        : admin"
+          - "API Key         : {{ conjur_admin_api_key.stdout | default('run: grep Admin API Key /opt/conjur/admin_data') | trim }}"
+          - "Certificate     : (leave blank for HTTP lab)"
+          - "Test secret ID  : {{ conjur_default_secret_name }}"
+          - "Summary file    : {{ conjur_dir }}/AAP_INTEGRATION.txt"
+          - "Full guide      : CONJUR_AAP_INTEGRATION.md"
+          - "==============================================="
+      when: admin_data_final.stat.exists

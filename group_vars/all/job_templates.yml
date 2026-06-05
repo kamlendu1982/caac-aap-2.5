@@ -112,7 +112,7 @@ controller_templates:
       # drift_apply: false = dry-run (report only, no changes)
       # drift_apply: true  = apply changes (create / update / delete)
       # Override at launch time via the "Extra Variables" prompt.
-      drift_apply: false
+      drift_apply: true
       drift_objects: ""
 
       # --- LLM / MaaS endpoint (non-sensitive) ---
@@ -200,4 +200,30 @@ controller_templates:
     ask_inventory_on_launch: true
     extra_vars:
       aap_verify_ssl: "false"
+
+  - name: Deploy CyberArk Conjur OSS
+    description: >-
+      Deploy CyberArk Conjur OSS on EC2 using Podman (conjur-quickstart).
+      Creates admin account, lab secret (db_password), and systemd auto-start.
+      On success, the job output and /opt/conjur/AAP_INTEGRATION.txt on the
+      target host contain values for the AAP CyberArk Conjur Secrets Manager
+      Lookup credential. See CONJUR_AAP_INTEGRATION.md in the repo.
+    project: caac_aap_25
+    playbook: playbooks/deploy_cyberArk_conjur.yml
+    inventory: conjur_host
+    execution_environment: "Default execution environment"
+    job_type: run
+    verbosity: 1
+    ask_variables_on_launch: true
+    credentials:
+      - aws-ec2
+    extra_vars:
+      conjur_account: "myConjurAccount"
+      conjur_admin_pass: "MySecretP@SS1"
+      conjur_dir: "/opt/conjur"
+      conjur_load_default_secret: true
+      conjur_enable_systemd: true
+      conjur_configure_client: true
+      conjur_load_sample_policy: false
+      conjur_start_demo_services: false
 ...

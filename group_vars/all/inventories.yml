@@ -25,4 +25,7 @@ controller_inventories:
     description: example for with a containergroup
     organization: MandT
     instance_group: 3
+  - name: conjur_host
+    description: CyberArk Conjur OSS target host(s)
+    organization: Default
 ...
