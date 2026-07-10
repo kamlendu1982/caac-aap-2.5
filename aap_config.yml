@@ -1,6 +1,8 @@
 ---
 - name: Playbook to configure ansible controller post installation
   hosts: localhost
+  vars:
+    gitlab_token: "my_dummy"
   #vars_files:
   #  - ../vault.yml
   connection: local

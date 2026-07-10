@@ -2,6 +2,8 @@
 aap_organizations:
   - name: Default
     default_environment: supported
+  - name: Moodys
+    default_environment: supported
   
   - name: config_as_code
     default_environment: supported
