@@ -1,6 +1,6 @@
 ---
 - name: Playbook to configure ansible controller post installation
-  hosts: all
+  hosts: localhost
   #vars_files:
   #  - ../vault.yml
   connection: local
