@@ -102,8 +102,8 @@ controller_templates:
     job_type: run
     concurrent_jobs_enabled: false
     ask_variables_on_launch: true
-    webhook_service: "github"
-    webhook_credential: "RQJeF5mwV3cZgpOeznkLH8jQdj98kuvNnYn12ROvvsHZQsOoG5"
+    #webhook_service: "github"
+    #webhook_credential: "RQJeF5mwV3cZgpOeznkLH8jQdj98kuvNnYn12ROvvsHZQsOoG5"
     verbosity: 0
     credentials:
       - drift_manager_secrets
