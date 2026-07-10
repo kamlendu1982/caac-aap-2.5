@@ -10,6 +10,7 @@
 
 splunk_host: "ec2-3-141-192-254.us-east-2.compute.amazonaws.com"
 splunk_hec_token: "8a05b591-4937-47c5-807a-064f63a4b224"
+vault_splunk_hec_token: "8a05b591-4937-47c5-807a-064f63a4b224"
 
 controller_settings:
   - name: LOG_AGGREGATOR_HOST

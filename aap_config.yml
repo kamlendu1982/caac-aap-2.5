@@ -15,6 +15,20 @@
     - name: Fixing format
       ansible.builtin.set_fact:
         ah_token: "{{ ah_token['token'] }}"
+    - name: Authenticate and get an API token from Automation Platform 
+      ansible.platform.token:
+        aap_hostname: "{{ aap_hostname }}"
+        aap_username: "{{ aap_username }}"
+        aap_password: "{{ aap_password }}"
+        description: "Temporary CaC Dispatch Token"
+        scope: "write"
+        state: present
+        aap_validate_certs: false
+      register: gateway_token_login
+
+    #- name: Enforce the token for all subsequent tasks
+    #  ansible.builtin.set_fact:
+    #    aap_token: "{{ gateway_token_login.token.token }}"
     - name: call dispatch role
       ansible.builtin.include_role:
         name: infra.aap_configuration.dispatch

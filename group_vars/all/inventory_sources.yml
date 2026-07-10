@@ -2,7 +2,8 @@
 controller_inventory_sources:
   - name: config_as_code_source
     organization: Default
-    source: "Sourced from a Project"
+    #source: "Sourced from a Project"
+    source: "scm"
     source_project: Inventory_project
     source_path: inventory/static_git_inv.yml
     inventory: sample_dynamic
@@ -12,9 +13,10 @@ controller_inventory_sources:
     update_cache_timeout: 0
   - name: conjur_host_source
     organization: Default
-    source: "Sourced from a Project"
-    source_project: caac_aap_25
-    source_path: inventory.yml
+    #source: "Sourced from a Project"
+    source: "scm"
+    source_project: Inventory_project
+    source_path: inventory/static_git_inv.yml
     inventory: conjur_host
     credential: ""
     overwrite: true
